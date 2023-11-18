@@ -235,6 +235,7 @@ class TSMixer:
 
     def _load_data_norm(self) -> Optional[DataNormalization]:
         if os.path.exists(self.conf.data_norm_json):
+            logger.debug(f"Loading data normalization from {self.conf.data_norm_json}")
             with open(self.conf.data_norm_json, "r") as f:
                 return DataNormalization.from_dict(json.load(f))
         else:
@@ -244,6 +245,7 @@ class TSMixer:
     def _write_data_norm(self, data_norm: DataNormalization):
         with open(self.conf.data_norm_json, "w") as f:
             json.dump(data_norm.to_dict(), f, indent=3)
+            logger.debug(f"Saved data normalization to {f.name}")
 
 
     def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List:

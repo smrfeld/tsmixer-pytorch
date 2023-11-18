@@ -5,6 +5,7 @@ import torch
 from typing import Tuple, Callable, Optional, List
 from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
+from loguru import logger
 
 
 class ValidationSplit(Enum):
@@ -61,8 +62,8 @@ class DataframeDataset(Dataset):
 
 @dataclass
 class DataNormalization(DataClassDictMixin):
-    mean_values: Optional[List[float]] = None
-    std_values: Optional[List[float]] = None
+    mean_each_feature: Optional[List[float]] = None
+    std_each_feature: Optional[List[float]] = None
 
 
 def load_csv_dataset(
@@ -102,11 +103,13 @@ def load_csv_dataset(
         if normalize_each_feature:
             # Compute mean and std on training data from pandas dataframe
             filtered_df = df.loc[idxs_train]
-            data_norm.mean_values = list(filtered_df.mean().values)
-            data_norm.std_values = list(filtered_df.std().values)
+            data_norm.mean_each_feature = list(filtered_df.mean().values)
+            data_norm.std_each_feature = list(filtered_df.std().values)
+            logger.debug(f"Computed data mean for each feature: {data_norm.mean_each_feature}")
+            logger.debug(f"Computed data std for each feature: {data_norm.std_each_feature}")
 
             # Create a normalization function
-            transform = lambda x: (x - torch.Tensor(data_norm.mean_values)) / torch.Tensor(data_norm.std_values)
+            transform = lambda x: (x - torch.Tensor(data_norm.mean_each_feature)) / torch.Tensor(data_norm.std_each_feature)
 
             # Apply the normalization function
             dataset.transform = transform
