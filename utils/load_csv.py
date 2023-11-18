@@ -2,7 +2,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, Dataset, Subset
 from enum import Enum
 import torch
-from typing import Tuple
+from typing import Tuple, Callable, Optional
 
 
 class ValidationSplit(Enum):
@@ -11,14 +11,15 @@ class ValidationSplit(Enum):
     "Reserve the last portion (e.g., 10-20%) of your time-ordered data for validation, and use the remaining data for training. This is a simple and widely used approach."
 
 
-class PdDataset(Dataset):
+class DataframeDataset(Dataset):
 
-    def __init__(self, df: pd.DataFrame, window_size_input: int, window_size_predict: int):
+    def __init__(self, df: pd.DataFrame, window_size_input: int, window_size_predict: int, transform: Optional[Callable] = None):
         window_size_total = window_size_input + window_size_predict
         assert len(df) > window_size_total, f"Dataset length ({len(df)}) must be greater than window size ({window_size_total})"
         self.df = df
         self.window_size_input = window_size_input
         self.window_size_predict = window_size_predict
+        self.transform = transform
 
     def __len__(self):
         return len(self.df) - self.window_size_input - self.window_size_predict
@@ -36,6 +37,11 @@ class PdDataset(Dataset):
         sample_input = torch.tensor(sample_input.values, dtype=torch.float32)
         sample_pred = torch.tensor(sample_pred.values, dtype=torch.float32)
 
+        # Apply transform
+        if self.transform is not None:
+            sample_input = self.transform(sample_input)
+            sample_pred = self.transform(sample_pred)
+
         return sample_input, sample_pred
 
     def __getitem__(self, idx):
@@ -51,27 +57,51 @@ class PdDataset(Dataset):
             return self.get_sample(idx)
 
 
-def load_etdataset(csv_file: str, batch_size: int, input_length: int, prediction_length: int, val_split: ValidationSplit, val_split_holdout: float = 0.2, shuffle: bool = True) -> Tuple[DataLoader, DataLoader]:
+def load_csv_dataset(
+    csv_file: str, 
+    batch_size: int, 
+    input_length: int, 
+    prediction_length: int, 
+    val_split: ValidationSplit, 
+    val_split_holdout: float = 0.2, 
+    shuffle: bool = True,
+    normalize_each_feature: bool = True
+    ) -> Tuple[DataLoader, DataLoader]:
 
     # Load the CSV file into a DataFrame
-    df = pd.read_csv(csv_file, parse_dates=['date'])
+    df = pd.read_csv(csv_file, parse_dates=['date'])        
 
     # Remove the date column, if present
     if 'date' in df.columns:
         df = df.drop(columns=['date'])
 
     # Make dataset
-    dataset = PdDataset(df, window_size_input=input_length, window_size_predict=prediction_length)
+    dataset = DataframeDataset(df, window_size_input=input_length, window_size_predict=prediction_length)
     no_pts = len(dataset)
 
     # Split the data into training and validation
     if val_split == ValidationSplit.TEMPORAL_HOLDOUT:
         idxs_train = list(range(int(no_pts * (1-val_split_holdout))))
         idxs_val = list(range(int(no_pts * (1-val_split_holdout)), no_pts))
-        train_dataset = Subset(dataset, idxs_train)
-        val_dataset = Subset(dataset, idxs_val)
     else:
         raise NotImplementedError(f"Validation split {val_split} not implemented")
+
+    # Normalize each feature separately
+    if normalize_each_feature:
+        # Compute mean and std on training data from pandas dataframe
+        filtered_df = df.loc[idxs_train]
+        mean_values = torch.Tensor(filtered_df.mean().values)
+        std_values = torch.Tensor(filtered_df.std().values)
+
+        # Create a normalization function
+        transform = lambda x: (x - mean_values) / std_values
+
+        # Apply the normalization function
+        dataset.transform = transform
+
+    # Splits
+    train_dataset = Subset(dataset, idxs_train)
+    val_dataset = Subset(dataset, idxs_val)
 
     loader_train = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     loader_val = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)

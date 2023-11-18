@@ -174,8 +174,8 @@ class TSMixer:
         if self.conf.data_src == self.conf.DataSrc.CSV_FILE:
             assert self.conf.data_src_csv is not None, "data_src_csv must be set if data_src is CSV_FILE"
 
-            from .load_etdataset import load_etdataset, ValidationSplit
-            return load_etdataset(
+            from .load_csv import load_csv_dataset, ValidationSplit
+            return load_csv_dataset(
                 csv_file=self.conf.data_src_csv,
                 batch_size=self.conf.batch_size,
                 input_length=self.conf.input_length,

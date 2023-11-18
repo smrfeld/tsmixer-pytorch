@@ -27,7 +27,7 @@ initialize: from-best-checkpoint # from-best-checkpoint
 batch_size: 32
 
 # Optional: Number of epochs
-num_epochs: 100
+num_epochs: 200
 
 # Optional: Learning rate
 learning_rate: 0.000001
