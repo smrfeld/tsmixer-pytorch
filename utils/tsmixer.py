@@ -15,6 +15,8 @@ import time
 
 
 class TSMixer:
+    """TSMixer including training and prediction methods
+    """    
 
     @dataclass
     class Conf(DataClassDictMixin):
@@ -233,19 +235,19 @@ class TSMixer:
         return batch_pred_hat
 
 
-    def _load_data_norm(self) -> Optional[DataNormalization]:
+    def load_data_norm(self) -> Optional[DataNormalization]:
+        """Load the data normalization from a JSON file
+
+        Returns:
+            Optional[DataNormalization]: Data normalization, or None if the file does not exist
+        """        
+
         if os.path.exists(self.conf.data_norm_json):
             logger.debug(f"Loading data normalization from {self.conf.data_norm_json}")
             with open(self.conf.data_norm_json, "r") as f:
                 return DataNormalization.from_dict(json.load(f))
         else:
             return None
-
-
-    def _write_data_norm(self, data_norm: DataNormalization):
-        with open(self.conf.data_norm_json, "w") as f:
-            json.dump(data_norm.to_dict(), f, indent=3)
-            logger.debug(f"Saved data normalization to {f.name}")
 
 
     def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List:
@@ -257,7 +259,7 @@ class TSMixer:
         self.conf.shuffle = False
 
         # Load the data normalization if it exists and use it
-        data_norm = self._load_data_norm()
+        data_norm = self.load_data_norm()
 
         # Create the loaders
         _, loader_val, _ = self.create_data_loaders_train_val(data_norm)
@@ -319,10 +321,10 @@ class TSMixer:
         # Load if needed
         if self.conf.initialize == self.conf.Initialize.FROM_LATEST_CHECKPOINT:
             epoch_start, val_loss_best = self.load_checkpoint(fname=self.conf.checkpoint_latest, optimizer=optimizer)
-            data_norm = self._load_data_norm()
+            data_norm = self.load_data_norm()
         elif self.conf.initialize == self.conf.Initialize.FROM_BEST_CHECKPOINT:
             epoch_start, val_loss_best = self.load_checkpoint(fname=self.conf.checkpoint_best, optimizer=optimizer)
-            data_norm = self._load_data_norm()
+            data_norm = self.load_data_norm()
         elif self.conf.initialize == self.conf.Initialize.FROM_SCRATCH:
             epoch_start, val_loss_best = 0, float("inf")
             # Save initial weights
@@ -381,6 +383,17 @@ class TSMixer:
             }, fname)
 
 
+    def _write_data_norm(self, data_norm: DataNormalization):
+        """Write the data normalization to a JSON file
+
+        Args:
+            data_norm (DataNormalization): Data normalization
+        """        
+        with open(self.conf.data_norm_json, "w") as f:
+            json.dump(data_norm.to_dict(), f, indent=3)
+            logger.debug(f"Saved data normalization to {f.name}")
+
+
     def _write_training_metadata(self, train_data: TrainingMetadata):
         """Write the training progress to a JSON file
 
@@ -394,6 +407,16 @@ class TSMixer:
 
 
     def _compute_loss(self, batch_input: torch.Tensor, batch_pred: torch.Tensor) -> torch.Tensor:
+        """Compute the loss
+
+        Args:
+            batch_input (torch.Tensor): Batch input of shape (batch_size, input_length (time), no_features)
+            batch_pred (torch.Tensor): Batch prediction of shape (batch_size, prediction_length (time), no_features)
+
+        Returns:
+            torch.Tensor: Loss (MSE)
+        """        
+
         # Forward pass
         batch_pred_hat = self.model(batch_input)
 
@@ -403,6 +426,16 @@ class TSMixer:
 
 
     def _train_step(self, batch_input: torch.Tensor, batch_pred: torch.Tensor, optimizer: torch.optim.Optimizer) -> float:
+        """Training step
+
+        Args:
+            batch_input (torch.Tensor): Input data of shape (batch_size, input_length (time), no_features)
+            batch_pred (torch.Tensor): Prediction data of shape (batch_size, prediction_length (time), no_features)
+            optimizer (torch.optim.Optimizer): Optimizer
+
+        Returns:
+            float: Loss (MSE)
+        """        
         self.model.train()
 
         # Loss

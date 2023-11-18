@@ -77,6 +77,22 @@ def load_csv_dataset(
     normalize_each_feature: bool = True,
     data_norm: Optional[DataNormalization] = None
     ) -> Tuple[DataLoader, DataLoader, DataNormalization]:
+    """Load a CSV dataset
+
+    Args:
+        csv_file (str): CSV file path
+        batch_size (int): Batch size
+        input_length (int): Input length
+        prediction_length (int): Prediction length
+        val_split (ValidationSplit): Validation split method
+        val_split_holdout (float, optional): Holdout fraction for validation (last X% of data) - only used for TEMPORAL_HOLDOUT. Defaults to 0.2.
+        shuffle (bool, optional): True to shuffle data. Defaults to True.
+        normalize_each_feature (bool, optional): Normalize each feature. Defaults to True.
+        data_norm (Optional[DataNormalization], optional): Normalization data - apply this instead of recalculating. Defaults to None.
+
+    Returns:
+        Tuple[DataLoader, DataLoader, DataNormalization]: Training and validation data loaders, and normalization data
+    """    
 
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file, parse_dates=['date'])        
