@@ -112,23 +112,26 @@ def load_csv_dataset(
     else:
         raise NotImplementedError(f"Validation split {val_split} not implemented")
 
-    # Normalize each feature separately
+    # Normalize each feature separately        
     if data_norm is None:
         data_norm = DataNormalization()
 
-        if normalize_each_feature:
-            # Compute mean and std on training data from pandas dataframe
-            filtered_df = df.loc[idxs_train]
-            data_norm.mean_each_feature = list(filtered_df.mean().values)
-            data_norm.std_each_feature = list(filtered_df.std().values)
-            logger.debug(f"Computed data mean for each feature: {data_norm.mean_each_feature}")
-            logger.debug(f"Computed data std for each feature: {data_norm.std_each_feature}")
+        # Compute mean and std on training data from pandas dataframe
+        filtered_df = df.loc[idxs_train]
+        data_norm.mean_each_feature = list(filtered_df.mean().values)
+        data_norm.std_each_feature = list(filtered_df.std().values)
+        logger.debug(f"Computed data mean for each feature: {data_norm.mean_each_feature}")
+        logger.debug(f"Computed data std for each feature: {data_norm.std_each_feature}")
 
-            # Create a normalization function
-            transform = lambda x: (x - torch.Tensor(data_norm.mean_each_feature)) / torch.Tensor(data_norm.std_each_feature)
+    if normalize_each_feature:
+        assert data_norm.mean_each_feature is not None, "Must provide data mean for each feature"
+        assert data_norm.std_each_feature is not None, "Must provide data std for each feature"
 
-            # Apply the normalization function
-            dataset.transform = transform
+        # Create a normalization function
+        transform = lambda x: (x - torch.Tensor(data_norm.mean_each_feature)) / torch.Tensor(data_norm.std_each_feature)
+
+        # Apply the normalization function
+        dataset.transform = transform
 
     # Splits
     train_dataset = Subset(dataset, idxs_train)

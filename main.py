@@ -26,6 +26,10 @@ if __name__ == "__main__":
         assert args.conf is not None, "Must provide a configuration file"
         with open(args.conf, "r") as f:
             conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
+
+        # Load best checkpoint
+        conf.initialize = TSMixer.Conf.Initialize.FROM_BEST_CHECKPOINT
+
         tsmixer = TSMixer(conf)
 
         data = tsmixer.predict_val_dataset(max_samples=10)
@@ -39,8 +43,8 @@ if __name__ == "__main__":
         assert args.conf is not None, "Must provide a configuration file"
         with open(args.conf, "r") as f:
             conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
-        tsmixer = TSMixer(conf)
 
+        tsmixer = TSMixer(conf)
         train_data = tsmixer.load_training_metadata_or_new()
         plot_loss(train_data, show=args.show)
 

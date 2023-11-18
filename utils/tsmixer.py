@@ -12,6 +12,7 @@ from loguru import logger
 from tqdm import tqdm
 import json
 import time
+import shutil
 
 
 class TSMixer:
@@ -327,9 +328,20 @@ class TSMixer:
             data_norm = self.load_data_norm()
         elif self.conf.initialize == self.conf.Initialize.FROM_SCRATCH:
             epoch_start, val_loss_best = 0, float("inf")
+
+            # Clear the output directory
+            if os.path.exists(self.conf.output_dir):
+                logger.warning(f"Output directory {self.conf.output_dir} already exists. Deleting it to start over. You have 8 seconds.")
+                for _ in range(8):
+                    print(".", end="", flush=True)
+                    time.sleep(1)
+                shutil.rmtree(self.conf.output_dir)
+            os.makedirs(self.conf.output_dir, exist_ok=True)
+
             # Save initial weights
             self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
             data_norm = None
+        
         else:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
         train_data = self.load_training_metadata_or_new(epoch_start)

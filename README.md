@@ -3,6 +3,7 @@
 Reimplementation of TSMixer in PyTorch.
 
 * Original paper: [https://arxiv.org/pdf/2303.06053.pdf](https://arxiv.org/abs/2303.06053)
+* Similar implementations: [https://github.com/marcopeix/time-series-analysis/blob/master/TSMixer.ipynb](https://github.com/marcopeix/time-series-analysis/blob/master/TSMixer.ipynb)
 
 ## Implementation notes from the paper
 
