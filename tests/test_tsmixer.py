@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 
-from utils import TSMixer, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime
+from utils import TSMixerModel, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime
 
 import pytest
 import torch
@@ -62,7 +62,7 @@ class TestTsMixer:
 
     def test_tsmixer(self):
 
-        ts = TSMixer(
+        ts = TSMixerModel(
             input_length=100,
             forecast_length=10,
             no_feats=5,

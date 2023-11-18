@@ -1,1 +1,1 @@
-from .tsmixer import TSBatchNorm2d, TSFeatMixingResBlock, TSMixer, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime
+from .model import TSBatchNorm2d, TSFeatMixingResBlock, TSMixerModel, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime
