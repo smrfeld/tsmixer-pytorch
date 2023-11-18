@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class TSMLPtime(nn.Module):
 
     def __init__(self, width: int):
@@ -13,6 +14,7 @@ class TSMLPtime(nn.Module):
         x = self.act(x)
         x = self.dropout(x)
         return x
+
 
 class TSMLPfeat(nn.Module):
 
@@ -73,6 +75,7 @@ class TSTimeMixingResBlock(nn.Module):
         # Add residual connection
         return x + y
 
+
 class TSFeatMixingResBlock(nn.Module):
 
     def __init__(self, width_feats: int):
@@ -119,6 +122,7 @@ class TSTemporalProjection(nn.Module):
         # Rotate back such that shape is (batch_size, time=forecast_length, features)
         y = torch.transpose(y, 1, 2)
         return y
+
 
 class TSMixer(nn.Module):
 
