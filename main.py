@@ -6,6 +6,7 @@ from tqdm import tqdm
 from loguru import logger
 from typing import List, Tuple
 
+
 def plot_preds(preds: List[List[float]], preds_gt: List[List[float]]):
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
@@ -31,7 +32,7 @@ def plot_preds(preds: List[List[float]], preds_gt: List[List[float]]):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--command", type=str, required=True, choices=["train", "predict"])
+    parser.add_argument("--command", type=str, required=True, choices=["train", "predict", "loss"])
     parser.add_argument("--conf", type=str, required=False, help="Path to the configuration file")
     args = parser.parse_args()
 
@@ -74,4 +75,13 @@ if __name__ == "__main__":
         with open("data.json", "w") as f:
             json.dump(data_json, f)
             logger.info(f"Saved data to data.json")
+
+    elif args.command == "loss":
+
+        # Plot loss
+        
+
+
+    else:
+        raise NotImplementedError(f"Command {args.command} not implemented")
 

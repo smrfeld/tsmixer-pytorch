@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
 from enum import Enum
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 from torch.utils.data import DataLoader
 import torch
 from loguru import logger
 from tqdm import tqdm
+import json
+import time
 
 
 class TSMixer:
@@ -35,14 +37,6 @@ class TSMixer:
             
             TEMPORAL_HOLDOUT = "temporal-holdout"
             "Reserve the last portion (e.g., 10-20%) of your time-ordered data for validation, and use the remaining data for training. This is a simple and widely used approach."
-
-        class Loss(Enum):
-
-            MSE = "mse"
-            "Mean squared error"
-
-            MAE = "mae"
-            "Mean absolute error"
 
         output_dir: str
         "Directory where to save checkpoints and generated images"
@@ -92,9 +86,6 @@ class TSMixer:
         initialize: Initialize = Initialize.FROM_SCRATCH
         "How to initialize the model"
 
-        loss: Loss = Loss.MSE
-        "Loss function to use"
-
         @property
         def checkpoint_init(self):
             os.makedirs(self.output_dir, exist_ok=True)
@@ -110,9 +101,27 @@ class TSMixer:
             os.makedirs(self.output_dir, exist_ok=True)
             return os.path.join(self.output_dir, "latest.pth")
 
+        @property
+        def train_progress_json(self):
+            os.makedirs(self.output_dir, exist_ok=True)
+            return os.path.join(self.output_dir, "loss.json")
+
         def check_valid(self):
             assert 0 <= self.validation_split_holdout <= 1, "validation_split_holdout must be between 0 and 1"
 
+
+    @dataclass
+    class TrainProgress(DataClassDictMixin):
+
+        @dataclass
+        class EpochData(DataClassDictMixin):
+            epoch: int
+            train_loss: float
+            val_loss: float
+            duration_seconds: float
+
+        epoch_to_data: Dict[int, EpochData]
+    
 
     def __init__(self, conf: Conf):
         conf.check_valid()
@@ -176,6 +185,26 @@ class TSMixer:
         return batch_pred_hat
 
 
+    def _load_train_progress_or_new(self, epoch_start: int) -> TrainProgress:
+        if os.path.exists(self.conf.train_progress_json):
+            with open(self.conf.train_progress_json, "r") as f:
+                tp = self.TrainProgress.from_dict(json.load(f))
+
+            # Remove epochs after epoch_start
+            tp.epoch_to_data = { epoch: tp.epoch_to_data[epoch] for epoch in tp.epoch_to_data if epoch < epoch_start }
+            
+            return tp
+        else:
+            return self.TrainProgress(epoch_to_data={})
+
+
+    def _write_train_progress(self, train_data: TrainProgress):
+        if os.path.dirname(self.conf.train_progress_json) != "":
+            os.makedirs(os.path.dirname(self.conf.train_progress_json), exist_ok=True)
+        with open(self.conf.train_progress_json, "w") as f:
+            json.dump(train_data.to_dict(), f, indent=3)
+
+
     def train(self):
 
         # Create the optimizer
@@ -193,6 +222,7 @@ class TSMixer:
             self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
         else:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
+        train_data = self._load_train_progress_or_new(epoch_start)
 
         # Create the loaders
         loader_train, loader_val = self.load_data_train_val()
@@ -200,6 +230,7 @@ class TSMixer:
         # Train
         for epoch in range(epoch_start, self.conf.num_epochs):
             logger.info(f"Epoch {epoch+1}/{self.conf.num_epochs}")
+            t0 = time.time()
 
             # Training
             train_loss = 0
@@ -207,6 +238,7 @@ class TSMixer:
                 train_loss += self._train_step(batch_input, batch_pred, optimizer)
 
             # Validation loss
+            self.model.eval()
             val_loss = 0
             for batch_input, batch_pred in tqdm(loader_val, desc="Validation batches"):
                 val_loss += self._compute_loss(batch_input, batch_pred).item()
@@ -216,12 +248,16 @@ class TSMixer:
             val_loss /= len(loader_val)
             logger.info(f"Training loss: {train_loss:.2f} val: {val_loss:.2f}")
 
+            t1 = time.time()
+            train_data.epoch_to_data[epoch] = self.TrainProgress.EpochData(epoch=epoch, train_loss=train_loss, val_loss=val_loss, duration_seconds=t1-t0)
+
             # Save checkpoint
             if val_loss < val_loss_best:
                 logger.info(f"New best validation loss: {val_loss:.2f}")
                 self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_best)
                 val_loss_best = val_loss
             self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_latest)
+            self._write_train_progress(train_data)
 
 
     def _compute_loss(self, batch_input: torch.Tensor, batch_pred: torch.Tensor) -> torch.Tensor:
@@ -229,14 +265,9 @@ class TSMixer:
         batch_pred_hat = self.model(batch_input)
 
         # Compute loss
-        if self.conf.loss == self.conf.Loss.MSE:
-            loss = torch.nn.functional.mse_loss(batch_pred_hat, batch_pred)
-        elif self.conf.loss == self.conf.Loss.MAE:
-            loss = torch.nn.functional.l1_loss(batch_pred_hat, batch_pred)
-        else:
-            raise NotImplementedError(f"Loss {self.conf.loss} not implemented")
-
+        loss = torch.nn.functional.mse_loss(batch_pred_hat, batch_pred)
         return loss
+
 
     def _train_step(self, batch_input: torch.Tensor, batch_pred: torch.Tensor, optimizer: torch.optim.Optimizer) -> float:
         self.model.train()
