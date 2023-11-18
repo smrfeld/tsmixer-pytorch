@@ -1,74 +1,49 @@
 import sys
 sys.path.append("..")
 
-from utils import TSMixerModel, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime
+from utils import TSMixer
 
 import pytest
 import torch
+import os
+import shutil
+
+TEST_CSV_NO_FEATS = 7
+
+
+@pytest.fixture
+def conf():
+    output_dir = "TMP_output_dir"
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    
+    yield TSMixer.Conf(
+        input_length=20,
+        prediction_length=5,
+        output_dir=output_dir,
+        data_src=TSMixer.Conf.DataSrc.CSV_FILE,
+        data_src_csv="test_csv.csv",
+        batch_size=4,
+        num_epochs=10,
+        learning_rate=0.001,
+        optimizer="Adam"
+        )
+
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    
+
+@pytest.fixture
+def tsmixer(conf: TSMixer.Conf):
+    return TSMixer(conf=conf)
+
 
 class TestTsMixer:
 
-    def _time_series(self, batch_size: int, input_length: int, no_feats: int) -> torch.Tensor:
-        return torch.randn(batch_size, input_length, no_feats)
+    def test_load_data(self, tsmixer: TSMixer):
+        loader_train, loader_val = tsmixer.load_data_train_val()
+        batch = next(iter(loader_train))
+        assert batch.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, TEST_CSV_NO_FEATS)
 
-    def test_batchnorm2d(self):
-        bn = TSBatchNorm2d()
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = bn(data)
-        assert data_out.shape == data.shape
-
-
-    def test_tsmlpfeat(self):
-        mlp = TSMLPfeat(width=5)
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = mlp(data)
-        assert data_out.shape == data.shape
-
-    
-    def test_tsmlptime(self):
-        mlp = TSMLPtime(width=100)
-        data = self._time_series(batch_size=32, input_length=5, no_feats=100) # Note: time and features are swapped
-        data_out = mlp(data)
-        assert data_out.shape == data.shape
-
-    
-    def test_tstemporalprojection(self):
-        tp = TSTemporalProjection(input_length=100, forecast_length=30)
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = tp(data)
-        assert data_out.shape == (32, 30, 5)
-
-
-    def test_tsmixinglayer(self):
-        ml = TSMixingLayer(input_length=100, no_feats=5)
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = ml(data)
-        assert data_out.shape == data.shape
-
-
-    def test_tsfeatmixingresblock(self):
-        fmrb = TSFeatMixingResBlock(width_feats=5)
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = fmrb(data)
-        assert data_out.shape == data.shape
-
-
-    def test_tstimemixingresblock(self):
-        tmrb = TSTimeMixingResBlock(width_time=100)
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = tmrb(data)
-        assert data_out.shape == data.shape
-
-
-    def test_tsmixer(self):
-
-        ts = TSMixerModel(
-            input_length=100,
-            forecast_length=10,
-            no_feats=5,
-            no_mixer_layers=3
-            )
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        forecast = ts(data)
-
-        assert forecast.shape == (32, 10, 5)
+        batch = next(iter(loader_val))
+        assert batch.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, TEST_CSV_NO_FEATS)

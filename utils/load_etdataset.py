@@ -12,7 +12,9 @@ class ValidationSplit(Enum):
 
 
 class PdDataset(Dataset):
+
     def __init__(self, df: pd.DataFrame, window_size: int, transform=None):
+        assert len(df) > window_size, f"Dataset length ({len(df)}) must be greater than window size ({window_size})"
         self.df = df
         self.transform = transform
         self.window_size = window_size
@@ -23,7 +25,7 @@ class PdDataset(Dataset):
     def get_sample(self, idx):
         # Check if the index plus window size exceeds the length of the dataset
         if idx + self.window_size > len(self.df):
-            raise IndexError("Index + window_size exceeds dataset length")
+            raise IndexError(f"Index ({idx}) + window_size ({self.window_size}) exceeds dataset length ({len(self.df)})")
 
         # Window the data
         sample = self.df.iloc[idx:idx + self.window_size, :]
@@ -54,10 +56,14 @@ def load_etdataset(csv_file: str, batch_size: int, input_length: int, val_split:
 
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file, parse_dates=['date'])
-    no_pts = len(df)
+
+    # Remove the date column, if present
+    if 'date' in df.columns:
+        df = df.drop(columns=['date'])
 
     # Make dataset
-    dataset = PdDataset(df, input_length)
+    dataset = PdDataset(df, window_size=input_length)
+    no_pts = len(dataset)
 
     # Split the data into training and validation
     if val_split == ValidationSplit.TEMPORAL_HOLDOUT:

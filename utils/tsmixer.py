@@ -42,6 +42,12 @@ class TSMixer:
         output_dir: str
         "Directory where to save checkpoints and generated images"
 
+        input_length: int
+        "Number of time steps to use as input"
+
+        prediction_length: int
+        "Number of time steps to predict"
+
         data_src: DataSrc = DataSrc.CSV_FILE
         "Where to load the dataset from"
 
@@ -71,12 +77,6 @@ class TSMixer:
 
         initialize: Initialize = Initialize.FROM_SCRATCH
         "How to initialize the model"
-
-        input_length: int = 512
-        "Number of time steps to use as input"
-
-        prediction_length: int = 96
-        "Number of time steps to predict"
 
         loss: Loss = Loss.MSE
         "Loss function to use"
