@@ -1,0 +1,26 @@
+---
+output_dir: output.etdataset
+
+data_src: csv-file
+
+batch_size: 32
+
+num_epochs: 10
+
+learning_rate: 0.001
+
+optimizer: Adam
+
+random_seed: 42
+
+validation_split: temporal-holdout
+
+validation_split_holdout: 0.2
+
+initialize: from-scratch
+
+input_length: 512
+
+prediction_length: 96
+
+loss: mse

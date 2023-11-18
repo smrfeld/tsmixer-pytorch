@@ -29,6 +29,14 @@ class TSMixer:
             TEMPORAL_HOLDOUT = "temporal-holdout"
             "Reserve the last portion (e.g., 10-20%) of your time-ordered data for validation, and use the remaining data for training. This is a simple and widely used approach."
 
+        class Loss(Enum):
+
+            MSE = "mse"
+            "Mean squared error"
+
+            MAE = "mae"
+            "Mean absolute error"
+
         output_dir: str
         "Directory where to save checkpoints and generated images"
 
@@ -54,10 +62,19 @@ class TSMixer:
         "How to split the data into training and validation"
 
         validation_split_holdout: float = 0.2
-        "Use the last X% of the data for validation"
+        "Use the last X% of the data for validation. Only used for TEMPORAL_HOLDOUT"
 
         initialize: Initialize = Initialize.FROM_SCRATCH
         "How to initialize the model"
+
+        input_length: int = 512
+        "Number of time steps to use as input"
+
+        prediction_length: int = 96
+        "Number of time steps to predict"
+
+        loss: Loss = Loss.MSE
+        "Loss function to use"
 
         @property
         def checkpoint_init(self):
