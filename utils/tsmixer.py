@@ -335,6 +335,7 @@ class TSMixer:
                 for _ in range(8):
                     print(".", end="", flush=True)
                     time.sleep(1)
+                print("")
                 shutil.rmtree(self.conf.output_dir)
             os.makedirs(self.conf.output_dir, exist_ok=True)
 
