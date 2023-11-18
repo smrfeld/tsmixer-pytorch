@@ -38,10 +38,8 @@ if __name__ == "__main__":
 
     if args.command == "train":
         assert args.conf is not None, "Must provide a configuration file"
-
         with open(args.conf, "r") as f:
             conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
-
         tsmixer = TSMixer(conf)
         tsmixer.train()
 
@@ -78,9 +76,29 @@ if __name__ == "__main__":
 
     elif args.command == "loss":
 
-        # Plot loss
-        
+        assert args.conf is not None, "Must provide a configuration file"
+        with open(args.conf, "r") as f:
+            conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
+        tsmixer = TSMixer(conf)
 
+        # Plot loss
+        train_data = tsmixer.load_train_progress_or_new()
+
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        x = [ epoch for epoch in train_data.epoch_to_data.keys() ]
+        y = [ data.val_loss for data in train_data.epoch_to_data.values() ]
+        fig.add_trace(go.Scatter(x, y, mode="lines", name="Val. loss"))
+        y = [ data.train_loss for data in train_data.epoch_to_data.values() ]
+        fig.add_trace(go.Scatter(x, y, mode="lines", name="Train loss"))
+
+        fig.update_layout(
+            height=400, 
+            width=1200, 
+            title_text="Loss",
+            font=dict(size=18),
+            )
+        fig.show()
 
     else:
         raise NotImplementedError(f"Command {args.command} not implemented")

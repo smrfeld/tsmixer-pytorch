@@ -135,6 +135,16 @@ class TSMixer:
             no_mixer_layers=self.conf.no_mixer_layers
             )
 
+        # Load the model
+        if self.conf.initialize == self.conf.Initialize.FROM_LATEST_CHECKPOINT:
+            self.load_checkpoint(fname=self.conf.checkpoint_latest)
+        elif self.conf.initialize == self.conf.Initialize.FROM_BEST_CHECKPOINT:
+            self.load_checkpoint(fname=self.conf.checkpoint_best)
+        elif self.conf.initialize == self.conf.Initialize.FROM_SCRATCH:
+            pass
+        else:
+            raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
+
 
     def load_data_train_val(self) -> Tuple[DataLoader, DataLoader]:
 
@@ -185,13 +195,14 @@ class TSMixer:
         return batch_pred_hat
 
 
-    def _load_train_progress_or_new(self, epoch_start: int) -> TrainProgress:
+    def load_train_progress_or_new(self, epoch_start: Optional[int] = None) -> TrainProgress:
         if os.path.exists(self.conf.train_progress_json):
             with open(self.conf.train_progress_json, "r") as f:
                 tp = self.TrainProgress.from_dict(json.load(f))
 
             # Remove epochs after epoch_start
-            tp.epoch_to_data = { epoch: tp.epoch_to_data[epoch] for epoch in tp.epoch_to_data if epoch < epoch_start }
+            if epoch_start is not None:
+                tp.epoch_to_data = { epoch: tp.epoch_to_data[epoch] for epoch in tp.epoch_to_data if epoch < epoch_start }
             
             return tp
         else:
@@ -222,7 +233,7 @@ class TSMixer:
             self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
         else:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
-        train_data = self._load_train_progress_or_new(epoch_start)
+        train_data = self.load_train_progress_or_new(epoch_start)
 
         # Create the loaders
         loader_train, loader_val = self.load_data_train_val()

@@ -160,8 +160,8 @@ class TSMixerModel(nn.Module):
         self.eps = eps
 
         # Scale and shift params to learn
-        self.scale = nn.Parameter(torch.randn(no_feats))
-        self.shift = nn.Parameter(torch.randn(no_feats))
+        self.scale = nn.Parameter(torch.ones(no_feats))
+        self.shift = nn.Parameter(torch.zeros(no_feats))
 
         # ts mixer layers
         self.ts = TSMixerModelExclRIN(
