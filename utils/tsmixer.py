@@ -89,6 +89,20 @@ class FeatMixingResBlock(nn.Module):
         # Add residual connection
         return x + y
 
+
+class TSMixingLayer(nn.Module):
+
+    def __init__(self, input_length: int, no_feats: int):
+        self.time_mixing = TimeMixingResBlock(width_time=input_length)
+        self.feat_mixing = FeatMixingResBlock(width_feats=no_feats)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Input x: (batch_size, time, features)
+        y = self.time_mixing(x)
+        y = self.feat_mixing(y)
+        return y
+
+
 class TemporalProjection(nn.Module):
 
     def __init__(self, input_length: int, forecast_length: int):
@@ -105,3 +119,21 @@ class TemporalProjection(nn.Module):
         # Rotate back such that shape is (batch_size, time=forecast_length, features)
         y = torch.transpose(y, 1, 2)
         return y
+
+class TSMixer(nn.Module):
+
+    def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int):
+        self.temp_proj = TemporalProjection(input_length=input_length, forecast_length=forecast_length)
+        self.mixer_layers = []
+        for _ in range(no_mixer_layers):
+            self.mixer_layers.append(TSMixingLayer(input_length=input_length, no_feats=no_feats))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Input x: (batch_size, time, features)
+        for mixer_layer in self.mixer_layers:
+            x = mixer_layer(x)
+
+        # Apply temporal projection -> shape is (batch_size, time=forecast_length, features)
+        x = self.temp_proj(x)
+
+        return x
