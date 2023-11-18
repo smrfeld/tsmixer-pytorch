@@ -13,22 +13,24 @@ class ValidationSplit(Enum):
 
 class PdDataset(Dataset):
 
-    def __init__(self, df: pd.DataFrame, window_size: int, transform=None):
-        assert len(df) > window_size, f"Dataset length ({len(df)}) must be greater than window size ({window_size})"
+    def __init__(self, df: pd.DataFrame, window_size_input: int, window_size_predict: int, transform=None):
+        window_size_total = window_size_input + window_size_predict
+        assert len(df) > window_size_total, f"Dataset length ({len(df)}) must be greater than window size ({window_size_total})"
         self.df = df
         self.transform = transform
-        self.window_size = window_size
+        self.window_size_input = window_size_input
+        self.window_size_predict = window_size_predict
 
     def __len__(self):
-        return len(self.df) - self.window_size
+        return len(self.df) - self.window_size_input - self.window_size_predict
 
     def get_sample(self, idx):
         # Check if the index plus window size exceeds the length of the dataset
-        if idx + self.window_size > len(self.df):
-            raise IndexError(f"Index ({idx}) + window_size ({self.window_size}) exceeds dataset length ({len(self.df)})")
+        if idx + self.window_size_input + self.window_size_predict > len(self.df):
+            raise IndexError(f"Index ({idx}) + window_size_input ({self.window_size_input}) + window_size_predict ({self.window_size_predict}) exceeds dataset length ({len(self.df)})")
 
         # Window the data
-        sample = self.df.iloc[idx:idx + self.window_size, :]
+        sample = self.df.iloc[idx:idx + self.window_size_input + self.window_size_predict, :]
 
         # Convert to torch tensor
         sample = torch.tensor(sample.values, dtype=torch.float32)
@@ -52,7 +54,7 @@ class PdDataset(Dataset):
             return self.get_sample(idx)
 
 
-def load_etdataset(csv_file: str, batch_size: int, input_length: int, val_split: ValidationSplit, val_split_holdout: float = 0.2) -> Tuple[DataLoader, DataLoader]:
+def load_etdataset(csv_file: str, batch_size: int, input_length: int, prediction_length: int, val_split: ValidationSplit, val_split_holdout: float = 0.2) -> Tuple[DataLoader, DataLoader]:
 
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file, parse_dates=['date'])
@@ -62,7 +64,7 @@ def load_etdataset(csv_file: str, batch_size: int, input_length: int, val_split:
         df = df.drop(columns=['date'])
 
     # Make dataset
-    dataset = PdDataset(df, window_size=input_length)
+    dataset = PdDataset(df, window_size_input=input_length, window_size_predict=prediction_length)
     no_pts = len(dataset)
 
     # Split the data into training and validation

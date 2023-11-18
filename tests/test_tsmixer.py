@@ -20,6 +20,8 @@ def conf():
     yield TSMixer.Conf(
         input_length=20,
         prediction_length=5,
+        no_features=TEST_CSV_NO_FEATS,
+        no_mixer_layers=2,
         output_dir=output_dir,
         data_src=TSMixer.Conf.DataSrc.CSV_FILE,
         data_src_csv="test_csv.csv",
