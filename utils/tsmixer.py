@@ -59,7 +59,7 @@ class TSMixer:
         prediction_length: int
         "Number of time steps to predict"
 
-        data_src: DataSrc = DataSrc.CSV_FILE
+        data_src: DataSrc
         "Where to load the dataset from"
 
         data_src_csv: Optional[str] = None
@@ -142,17 +142,52 @@ class TSMixer:
             raise NotImplementedError(f"data_src {self.conf.data_src} not implemented")
 
 
+    def _save_checkpoint(self, epoch: int, optimizer: torch.optim.Optimizer, loss: float, fname: str):
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            }, fname)
+
+
+    def load_checkpoint(self, fname: str, optimizer: Optional[torch.optim.Optimizer] = None) -> Tuple[int,float]:
+        logger.debug(f"Loading model weights from {fname}")
+        checkpoint = torch.load(fname)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+
+        if optimizer is not None:
+            logger.debug(f"Loading optimizer state from {fname}")
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        epoch = checkpoint['epoch']
+        loss = checkpoint['loss']
+        logger.info(f"Loaded optimizer state from epoch {epoch} with loss {loss}")
+        return epoch, loss
+
+
     def train(self):
 
         # Create the optimizer
         optimizer_cls = getattr(torch.optim, self.conf.optimizer)
         optimizer = optimizer_cls(self.model.parameters(), lr=self.conf.learning_rate)
 
+        # Load if needed
+        if self.conf.initialize == self.conf.Initialize.FROM_LATEST_CHECKPOINT:
+            epoch_start, val_loss_best = self.load_checkpoint(fname=self.conf.checkpoint_latest, optimizer=optimizer)
+        elif self.conf.initialize == self.conf.Initialize.FROM_BEST_CHECKPOINT:
+            epoch_start, val_loss_best = self.load_checkpoint(fname=self.conf.checkpoint_best, optimizer=optimizer)
+        elif self.conf.initialize == self.conf.Initialize.FROM_SCRATCH:
+            epoch_start, val_loss_best = 0, float("inf")
+            # Save initial weights
+            self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
+        else:
+            raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
+
         # Create the loaders
         loader_train, loader_val = self.load_data_train_val()
 
         # Train
-        for epoch in range(self.conf.num_epochs):
+        for epoch in range(epoch_start, self.conf.num_epochs):
             logger.info(f"Epoch {epoch+1}/{self.conf.num_epochs}")
 
             # Training
@@ -169,6 +204,13 @@ class TSMixer:
             train_loss /= len(loader_train)
             val_loss /= len(loader_val)
             logger.info(f"Training loss: {train_loss:.2f} val: {val_loss:.2f}")
+
+            # Save checkpoint
+            if val_loss < val_loss_best:
+                logger.info(f"New best validation loss: {val_loss:.2f}")
+                self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_best)
+                val_loss_best = val_loss
+            self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_latest)
 
 
     def _compute_loss(self, batch_input: torch.Tensor, batch_pred: torch.Tensor) -> torch.Tensor:

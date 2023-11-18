@@ -1,31 +1,49 @@
 ---
+# REQUIRED: Output directory
 output_dir: output.etdataset
 
-data_src: csv-file
-data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
-
-batch_size: 32
-
-num_epochs: 100
-
-learning_rate: 0.0000001
-
-optimizer: Adam
-
-random_seed: 42
-
-validation_split: temporal-holdout
-
-validation_split_holdout: 0.2
-
-initialize: from-scratch
-
+# REQUIRED: Input length
 input_length: 512
 
+# REQUIRED: Prediction length
 prediction_length: 96
 
+# REQUIRED: Number of features
 no_features: 7
 
+# REQUIRED: Number of mixer layers
 no_mixer_layers: 1
 
+# REQUIRED: Data source
+data_src: csv-file
+
+# REQUIRED: Path to the data source
+data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
+
+# Optional: How to initialize the model (restarts training from scratch if set to from-scratch)
+initialize: from-best
+
+# Optional: Batch size
+batch_size: 32
+
+# Optional: Number of epochs
+num_epochs: 100
+
+# Optional: Learning rate
+learning_rate: 0.000001
+
+# Optional: Optimizer - Adam, SGD, RMSprop, etc
+optimizer: Adam
+
+# Optional: Random seed
+random_seed: 42
+
+# Optional: Validation split method
+validation_split: temporal-holdout
+
+# Optional: Validation split holdout - fraction of the data to be used for validation
+# (only used if validation_split is set to temporal-holdout)
+validation_split_holdout: 0.2
+
+# Optional: Loss function - mse or mae
 loss: mse
