@@ -13,11 +13,10 @@ class ValidationSplit(Enum):
 
 class PdDataset(Dataset):
 
-    def __init__(self, df: pd.DataFrame, window_size_input: int, window_size_predict: int, transform=None):
+    def __init__(self, df: pd.DataFrame, window_size_input: int, window_size_predict: int):
         window_size_total = window_size_input + window_size_predict
         assert len(df) > window_size_total, f"Dataset length ({len(df)}) must be greater than window size ({window_size_total})"
         self.df = df
-        self.transform = transform
         self.window_size_input = window_size_input
         self.window_size_predict = window_size_predict
 
@@ -30,16 +29,14 @@ class PdDataset(Dataset):
             raise IndexError(f"Index ({idx}) + window_size_input ({self.window_size_input}) + window_size_predict ({self.window_size_predict}) exceeds dataset length ({len(self.df)})")
 
         # Window the data
-        sample = self.df.iloc[idx:idx + self.window_size_input + self.window_size_predict, :]
+        sample_input = self.df.iloc[idx:idx + self.window_size_input, :]
+        sample_pred = self.df.iloc[idx + self.window_size_input:idx + self.window_size_input + self.window_size_predict, :]
 
         # Convert to torch tensor
-        sample = torch.tensor(sample.values, dtype=torch.float32)
+        sample_input = torch.tensor(sample_input.values, dtype=torch.float32)
+        sample_pred = torch.tensor(sample_pred.values, dtype=torch.float32)
 
-        # Transform as needed
-        if self.transform:
-            sample = self.transform(sample)
-
-        return sample
+        return sample_input, sample_pred
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):

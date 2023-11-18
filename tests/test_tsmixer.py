@@ -44,8 +44,7 @@ class TestTsMixer:
 
     def test_load_data(self, tsmixer: TSMixer):
         loader_train, loader_val = tsmixer.load_data_train_val()
-        batch = next(iter(loader_train))
-        assert batch.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, TEST_CSV_NO_FEATS)
-
-        batch = next(iter(loader_val))
-        assert batch.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, TEST_CSV_NO_FEATS)
+        for loader in [loader_train, loader_val]:
+            batch_input, batch_pred = next(iter(loader))
+            assert batch_input.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, tsmixer.conf.no_features)
+            assert batch_pred.shape == (tsmixer.conf.batch_size, tsmixer.conf.prediction_length, tsmixer.conf.no_features)
