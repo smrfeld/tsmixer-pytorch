@@ -88,3 +88,20 @@ class FeatMixingResBlock(nn.Module):
                 
         # Add residual connection
         return x + y
+
+class TemporalProjection(nn.Module):
+
+    def __init__(self, input_length: int, forecast_length: int):
+        self.lin = nn.Linear(in_features=input_length, out_features=forecast_length)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Input x: (batch_size, time, features)
+        # Now rotate such that shape is (batch_size, features, time=input_length)
+        y = torch.transpose(x, 1, 2)
+
+        # Apply linear projection -> shape is (batch_size, features, time=forecast_length)
+        y = self.lin(y)
+
+        # Rotate back such that shape is (batch_size, time=forecast_length, features)
+        y = torch.transpose(y, 1, 2)
+        return y
