@@ -68,6 +68,9 @@ class TSMixer:
         batch_size: int = 64
         "Batch size"
 
+        shuffle: bool = True
+        "Shuffle the data"
+
         num_epochs: int = 10
         "Number of epochs to train for"
 
@@ -136,7 +139,8 @@ class TSMixer:
                 input_length=self.conf.input_length,
                 prediction_length=self.conf.prediction_length,
                 val_split=ValidationSplit(self.conf.validation_split.value),
-                val_split_holdout=self.conf.validation_split_holdout
+                val_split_holdout=self.conf.validation_split_holdout,
+                shuffle=self.conf.shuffle
                 )
         else:
             raise NotImplementedError(f"data_src {self.conf.data_src} not implemented")
@@ -163,6 +167,13 @@ class TSMixer:
         loss = checkpoint['loss']
         logger.info(f"Loaded optimizer state from epoch {epoch} with loss {loss}")
         return epoch, loss
+
+
+    def predict(self, batch_input: torch.Tensor) -> torch.Tensor:
+        self.model.eval()
+        with torch.no_grad():
+            batch_pred_hat = self.model(batch_input)
+        return batch_pred_hat
 
 
     def train(self):

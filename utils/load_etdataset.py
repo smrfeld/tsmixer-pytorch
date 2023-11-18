@@ -51,7 +51,7 @@ class PdDataset(Dataset):
             return self.get_sample(idx)
 
 
-def load_etdataset(csv_file: str, batch_size: int, input_length: int, prediction_length: int, val_split: ValidationSplit, val_split_holdout: float = 0.2) -> Tuple[DataLoader, DataLoader]:
+def load_etdataset(csv_file: str, batch_size: int, input_length: int, prediction_length: int, val_split: ValidationSplit, val_split_holdout: float = 0.2, shuffle: bool = True) -> Tuple[DataLoader, DataLoader]:
 
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file, parse_dates=['date'])
@@ -73,6 +73,6 @@ def load_etdataset(csv_file: str, batch_size: int, input_length: int, prediction
     else:
         raise NotImplementedError(f"Validation split {val_split} not implemented")
 
-    loader_train = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    loader_val = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    loader_train = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+    loader_val = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)
     return loader_train, loader_val
