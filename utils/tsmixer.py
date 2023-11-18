@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
 from enum import Enum
 import os
+from typing import Optional, Tuple
+from torch.utils.data import DataLoader
 
 
 class TSMixer:
@@ -42,6 +44,9 @@ class TSMixer:
 
         data_src: DataSrc = DataSrc.CSV_FILE
         "Where to load the dataset from"
+
+        data_src_csv: Optional[str] = None
+        "Path to the CSV file to load the dataset from. Only used if data_src is CSV_FILE"
 
         batch_size: int = 64
         "Batch size"
@@ -93,3 +98,25 @@ class TSMixer:
 
         def check_valid(self):
             assert 0 <= self.validation_split_holdout <= 1, "validation_split_holdout must be between 0 and 1"
+
+
+    def __init__(self, conf: Conf):
+        conf.check_valid()
+        self.conf = conf
+
+
+    def load_data_train_val(self) -> Tuple[DataLoader, DataLoader]:
+
+        if self.conf.data_src == self.conf.DataSrc.CSV_FILE:
+            assert self.conf.data_src_csv is not None, "data_src_csv must be set if data_src is CSV_FILE"
+
+            from .load_etdataset import load_etdataset, ValidationSplit
+            return load_etdataset(
+                csv_file=self.conf.data_src_csv,
+                batch_size=self.conf.batch_size,
+                input_length=self.conf.input_length,
+                val_split=ValidationSplit(self.conf.validation_split.value),
+                val_split_holdout=self.conf.validation_split_holdout
+                )
+        else:
+            raise NotImplementedError(f"data_src {self.conf.data_src} not implemented")

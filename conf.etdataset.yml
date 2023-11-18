@@ -2,6 +2,7 @@
 output_dir: output.etdataset
 
 data_src: csv-file
+data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
 
 batch_size: 32
 
