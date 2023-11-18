@@ -18,7 +18,12 @@ def plot_preds(preds: List[List[float]], preds_gt: List[List[float]]):
         fig.add_trace(go.Scatter(y=[pred[ifeat] for pred in preds], mode="lines", name=f"pred_{ifeat}"), row=1, col=ifeat+1)
         fig.add_trace(go.Scatter(y=[pred[ifeat] for pred in preds_gt], mode="lines", name=f"pred_gt_{ifeat}"), row=1, col=ifeat+1)
 
-    fig.update_layout(height=400, width=1200, title_text="Predictions")
+    fig.update_layout(
+        height=400, 
+        width=1200, 
+        title_text="Predictions",
+        font=dict(size=18),
+        )
 
     fig.show()
     

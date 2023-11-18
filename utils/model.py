@@ -131,10 +131,10 @@ class TSTemporalProjection(nn.Module):
         return y
 
 
-class TSMixerModel(nn.Module):
+class TSMixerModelExclRIN(nn.Module):
 
     def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int):
-        super(TSMixerModel, self).__init__()
+        super(TSMixerModelExclRIN, self).__init__()
         self.temp_proj = TSTemporalProjection(input_length=input_length, forecast_length=forecast_length)
         self.mixer_layers = []
         for _ in range(no_mixer_layers):
@@ -147,5 +147,62 @@ class TSMixerModel(nn.Module):
 
         # Apply temporal projection -> shape is (batch_size, time=forecast_length, features)
         x = self.temp_proj(x)
+
+        return x
+
+
+class TSMixerModel(nn.Module):
+    """Include Reversible instance normalization https://openreview.net/pdf?id=cGDAkQo1C0p
+    """    
+
+    def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int, eps: float = 1e-8):
+        super(TSMixerModel, self).__init__()
+        self.eps = eps
+
+        # Scale and shift params to learn
+        self.scale = nn.Parameter(torch.randn(no_feats))
+        self.shift = nn.Parameter(torch.randn(no_feats))
+
+        # ts mixer layers
+        self.ts = TSMixerModelExclRIN(
+            input_length=input_length, 
+            forecast_length=forecast_length, 
+            no_feats=no_feats, 
+            no_mixer_layers=no_mixer_layers
+            )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Input x: (batch_size, time, features)
+
+        # Compute mean, var across time dimension
+        # mean: (batch_size, 1, features)
+        # var: (batch_size, 1, features)
+        mean = torch.mean(x, dim=1, keepdim=True)
+        var = torch.var(x, dim=1, keepdim=True)
+
+        # Normalize across time dimension
+        # x: (batch_size, time, features)
+        x = (x - mean) / torch.sqrt(var + self.eps)
+
+        # Apply scale and shift in each feature dimension separately
+        # x: (batch_size, time, features)
+        # scale: (features)
+        # shift: (features)
+        x = x * self.scale + self.shift
+
+        # Apply ts mixer layers
+        x = self.ts(x)
+
+        # Apply inverse scale and shift in each feature dimension separately
+        # x: (batch_size, time, features)
+        # scale: (features)
+        # shift: (features)
+        x = (x - self.shift) / self.scale
+
+        # Unnormalize across time dimension
+        # x: (batch_size, time, features)
+        # mean: (batch_size, 1, features)
+        # var: (batch_size, 1, features)
+        x = x * torch.sqrt(var + self.eps) + mean
 
         return x

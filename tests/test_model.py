@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 
-from utils import TSMixerModel, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime
+from utils import TSMixerModelExclRIN, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime, TSMixerModel
 
 import pytest
 import torch
@@ -58,6 +58,20 @@ class TestModel:
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = tmrb(data)
         assert data_out.shape == data.shape
+
+
+    def test_tsmixer_excl_rin(self):
+
+        ts = TSMixerModelExclRIN(
+            input_length=100,
+            forecast_length=10,
+            no_feats=5,
+            no_mixer_layers=3
+            )
+        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
+        forecast = ts(data)
+
+        assert forecast.shape == (32, 10, 5)
 
 
     def test_tsmixer(self):
