@@ -55,7 +55,7 @@ if __name__ == "__main__":
         conf.shuffle = False
 
         tsmixer = TSMixer(conf)
-        _, loader_val = tsmixer.load_data_train_val()
+        _, loader_val = tsmixer.create_data_loaders_train_val()
         
         data_json = []
         for _ in tqdm(range(10), desc="Predicting"):
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         tsmixer = TSMixer(conf)
 
         # Plot loss
-        train_data = tsmixer.load_train_progress_or_new()
+        train_data = tsmixer.load_training_metadata_or_new()
 
         import plotly.graph_objects as go
         fig = go.Figure()

@@ -111,19 +111,32 @@ class TSMixer:
 
 
     @dataclass
-    class TrainProgress(DataClassDictMixin):
+    class TrainingMetadata(DataClassDictMixin):
 
         @dataclass
         class EpochData(DataClassDictMixin):
             epoch: int
+            "Epoch number"
+
             train_loss: float
+            "Training loss"
+
             val_loss: float
+            "Validation loss"
+
             duration_seconds: float
+            "Duration of the epoch in seconds"
 
         epoch_to_data: Dict[int, EpochData]
-    
+        "Mapping from epoch number to epoch data"
+
 
     def __init__(self, conf: Conf):
+        """Constructor for TSMixer class
+
+        Args:
+            conf (Conf): Configuration
+        """        
         conf.check_valid()
         self.conf = conf
 
@@ -146,7 +159,12 @@ class TSMixer:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
 
 
-    def load_data_train_val(self) -> Tuple[DataLoader, DataLoader]:
+    def create_data_loaders_train_val(self) -> Tuple[DataLoader, DataLoader]:
+        """Create the training and validation data loaders
+
+        Returns:
+            Tuple[DataLoader, DataLoader]: Training and validation data loaders
+        """        
 
         if self.conf.data_src == self.conf.DataSrc.CSV_FILE:
             assert self.conf.data_src_csv is not None, "data_src_csv must be set if data_src is CSV_FILE"
@@ -165,16 +183,16 @@ class TSMixer:
             raise NotImplementedError(f"data_src {self.conf.data_src} not implemented")
 
 
-    def _save_checkpoint(self, epoch: int, optimizer: torch.optim.Optimizer, loss: float, fname: str):
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': loss,
-            }, fname)
-
-
     def load_checkpoint(self, fname: str, optimizer: Optional[torch.optim.Optimizer] = None) -> Tuple[int,float]:
+        """Load a checkpoint, optionally including the optimizer state
+
+        Args:
+            fname (str): File name
+            optimizer (Optional[torch.optim.Optimizer], optional): Optimizer to update from checkpoint. Defaults to None.
+
+        Returns:
+            Tuple[int,float]: Epoch and loss
+        """        
         logger.debug(f"Loading model weights from {fname}")
         checkpoint = torch.load(fname)
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -189,16 +207,32 @@ class TSMixer:
 
 
     def predict(self, batch_input: torch.Tensor) -> torch.Tensor:
+        """Predict the output for a batch of input data
+
+        Args:
+            batch_input (torch.Tensor): Input data of shape (batch_size, input_length (time), no_features)
+
+        Returns:
+            torch.Tensor: Predicted output of shape (batch_size, prediction_length (time), no_features)
+        """        
         self.model.eval()
         with torch.no_grad():
             batch_pred_hat = self.model(batch_input)
         return batch_pred_hat
 
 
-    def load_train_progress_or_new(self, epoch_start: Optional[int] = None) -> TrainProgress:
+    def load_training_metadata_or_new(self, epoch_start: Optional[int] = None) -> TrainingMetadata:
+        """Load the training progress from a JSON file, or create a new one
+
+        Args:
+            epoch_start (Optional[int], optional): Starting epoch - earlier epochs will be removed if not None. Defaults to None.
+
+        Returns:
+            TrainProgress: Training metadata
+        """        
         if os.path.exists(self.conf.train_progress_json):
             with open(self.conf.train_progress_json, "r") as f:
-                tp = self.TrainProgress.from_dict(json.load(f))
+                tp = self.TrainingMetadata.from_dict(json.load(f))
 
             # Remove epochs after epoch_start
             if epoch_start is not None:
@@ -206,17 +240,12 @@ class TSMixer:
             
             return tp
         else:
-            return self.TrainProgress(epoch_to_data={})
-
-
-    def _write_train_progress(self, train_data: TrainProgress):
-        if os.path.dirname(self.conf.train_progress_json) != "":
-            os.makedirs(os.path.dirname(self.conf.train_progress_json), exist_ok=True)
-        with open(self.conf.train_progress_json, "w") as f:
-            json.dump(train_data.to_dict(), f, indent=3)
+            return self.TrainingMetadata(epoch_to_data={})
 
 
     def train(self):
+        """Train the model
+        """        
 
         # Create the optimizer
         optimizer_cls = getattr(torch.optim, self.conf.optimizer)
@@ -233,10 +262,10 @@ class TSMixer:
             self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
         else:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
-        train_data = self.load_train_progress_or_new(epoch_start)
+        train_data = self.load_training_metadata_or_new(epoch_start)
 
         # Create the loaders
-        loader_train, loader_val = self.load_data_train_val()
+        loader_train, loader_val = self.create_data_loaders_train_val()
 
         # Train
         for epoch in range(epoch_start, self.conf.num_epochs):
@@ -257,10 +286,11 @@ class TSMixer:
             # Log
             train_loss /= len(loader_train)
             val_loss /= len(loader_val)
-            logger.info(f"Training loss: {train_loss:.2f} val: {val_loss:.2f}")
+            dur = time.time() - t0
+            logger.info(f"Training loss: {train_loss:.2f} val: {val_loss:.2f} duration: {dur:.2f}s")
 
-            t1 = time.time()
-            train_data.epoch_to_data[epoch] = self.TrainProgress.EpochData(epoch=epoch, train_loss=train_loss, val_loss=val_loss, duration_seconds=t1-t0)
+            # Store metadata about training
+            train_data.epoch_to_data[epoch] = self.TrainingMetadata.EpochData(epoch=epoch, train_loss=train_loss, val_loss=val_loss, duration_seconds=dur)
 
             # Save checkpoint
             if val_loss < val_loss_best:
@@ -268,7 +298,28 @@ class TSMixer:
                 self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_best)
                 val_loss_best = val_loss
             self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_latest)
-            self._write_train_progress(train_data)
+            self._write_training_metadata(train_data)
+
+
+    def _save_checkpoint(self, epoch: int, optimizer: torch.optim.Optimizer, loss: float, fname: str):
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            }, fname)
+
+
+    def _write_training_metadata(self, train_data: TrainingMetadata):
+        """Write the training progress to a JSON file
+
+        Args:
+            train_data (TrainingMetadata): _description_
+        """        
+        if os.path.dirname(self.conf.train_progress_json) != "":
+            os.makedirs(os.path.dirname(self.conf.train_progress_json), exist_ok=True)
+        with open(self.conf.train_progress_json, "w") as f:
+            json.dump(train_data.to_dict(), f, indent=3)
 
 
     def _compute_loss(self, batch_input: torch.Tensor, batch_pred: torch.Tensor) -> torch.Tensor:
