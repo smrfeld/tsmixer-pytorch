@@ -5,6 +5,7 @@ import torch
 class TSMLPtime(nn.Module):
 
     def __init__(self, width: int):
+        super(TSMLPtime, self).__init__()
         self.lin = nn.Linear(in_features=width, out_features=width)
         self.dropout = nn.Dropout(p=0.5)
         self.act = nn.ReLU()
@@ -19,6 +20,7 @@ class TSMLPtime(nn.Module):
 class TSMLPfeat(nn.Module):
 
     def __init__(self, width: int):
+        super(TSMLPfeat, self).__init__()
         self.lin_1 = nn.Linear(in_features=width, out_features=width)
         self.lin_2 = nn.Linear(in_features=width, out_features=width)
         self.dropout_1 = nn.Dropout(p=0.5)
@@ -37,6 +39,7 @@ class TSMLPfeat(nn.Module):
 class TSBatchNorm2d(nn.Module):
 
     def __init__(self):
+        super(TSBatchNorm2d, self).__init__()
         self.bn = nn.BatchNorm2d(num_features=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -56,6 +59,7 @@ class TSBatchNorm2d(nn.Module):
 class TSTimeMixingResBlock(nn.Module):
 
     def __init__(self, width_time: int):
+        super(TSTimeMixingResBlock, self).__init__()
         self.mlp = TSMLPtime(width=width_time)
         self.norm = TSBatchNorm2d()
 
@@ -79,6 +83,7 @@ class TSTimeMixingResBlock(nn.Module):
 class TSFeatMixingResBlock(nn.Module):
 
     def __init__(self, width_feats: int):
+        super(TSFeatMixingResBlock, self).__init__()
         self.mlp = TSMLPfeat(width=width_feats)
         self.norm = TSBatchNorm2d()
 
@@ -96,6 +101,7 @@ class TSFeatMixingResBlock(nn.Module):
 class TSMixingLayer(nn.Module):
 
     def __init__(self, input_length: int, no_feats: int):
+        super(TSMixingLayer, self).__init__()
         self.time_mixing = TSTimeMixingResBlock(width_time=input_length)
         self.feat_mixing = TSFeatMixingResBlock(width_feats=no_feats)
     
@@ -109,6 +115,7 @@ class TSMixingLayer(nn.Module):
 class TSTemporalProjection(nn.Module):
 
     def __init__(self, input_length: int, forecast_length: int):
+        super(TSTemporalProjection, self).__init__()
         self.lin = nn.Linear(in_features=input_length, out_features=forecast_length)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -127,6 +134,7 @@ class TSTemporalProjection(nn.Module):
 class TSMixer(nn.Module):
 
     def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int):
+        super(TSMixer, self).__init__()
         self.temp_proj = TSTemporalProjection(input_length=input_length, forecast_length=forecast_length)
         self.mixer_layers = []
         for _ in range(no_mixer_layers):
