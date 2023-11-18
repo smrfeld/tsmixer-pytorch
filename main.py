@@ -3,9 +3,6 @@ from utils import TSMixer, plot_preds, plot_loss
 
 import argparse
 import yaml
-import json
-from tqdm import tqdm
-from loguru import logger
 
 
 if __name__ == "__main__":
@@ -13,7 +10,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--command", type=str, required=True, choices=["train", "predict", "loss"])
     parser.add_argument("--conf", type=str, required=False, help="Path to the configuration file")
-    parser.add_argument("--no-feats-plot", type=int, required=False, help="Number of features to plot")
+    parser.add_argument("--no-feats-plot", type=int, required=False, default=6, help="Number of features to plot")
     parser.add_argument("--show", action="store_true", required=False, help="Show plots")
     args = parser.parse_args()
 
@@ -32,10 +29,10 @@ if __name__ == "__main__":
         tsmixer = TSMixer(conf)
 
         data = tsmixer.predict_val_dataset(max_samples=10)
-        
+
         data_plt = data[0]
         assert args.no_feats_plot is not None, "Must provide number of features to plot"
-        plot_preds(data_plt["pred_hat"], data_plt["pred"], no_feats_plot=args.no_feats_plot, show=args.show)
+        plot_preds(data_plt["pred"], data_plt["pred_gt"], no_feats_plot=args.no_feats_plot, show=args.show)
 
     elif args.command == "loss":
 
