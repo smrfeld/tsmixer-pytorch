@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 
-class MLPtime(nn.Module):
+class TSMLPtime(nn.Module):
 
     def __init__(self, width: int):
         self.lin = nn.Linear(in_features=width, out_features=width)
@@ -14,7 +14,7 @@ class MLPtime(nn.Module):
         x = self.dropout(x)
         return x
 
-class MLPfeat(nn.Module):
+class TSMLPfeat(nn.Module):
 
     def __init__(self, width: int):
         self.lin_1 = nn.Linear(in_features=width, out_features=width)
@@ -51,10 +51,10 @@ class TSBatchNorm2d(nn.Module):
         return output
 
 
-class TimeMixingResBlock(nn.Module):
+class TSTimeMixingResBlock(nn.Module):
 
     def __init__(self, width_time: int):
-        self.mlp = MLPtime(width=width_time)
+        self.mlp = TSMLPtime(width=width_time)
         self.norm = TSBatchNorm2d()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -73,10 +73,10 @@ class TimeMixingResBlock(nn.Module):
         # Add residual connection
         return x + y
 
-class FeatMixingResBlock(nn.Module):
+class TSFeatMixingResBlock(nn.Module):
 
     def __init__(self, width_feats: int):
-        self.mlp = MLPfeat(width=width_feats)
+        self.mlp = TSMLPfeat(width=width_feats)
         self.norm = TSBatchNorm2d()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -93,8 +93,8 @@ class FeatMixingResBlock(nn.Module):
 class TSMixingLayer(nn.Module):
 
     def __init__(self, input_length: int, no_feats: int):
-        self.time_mixing = TimeMixingResBlock(width_time=input_length)
-        self.feat_mixing = FeatMixingResBlock(width_feats=no_feats)
+        self.time_mixing = TSTimeMixingResBlock(width_time=input_length)
+        self.feat_mixing = TSFeatMixingResBlock(width_feats=no_feats)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input x: (batch_size, time, features)
@@ -103,7 +103,7 @@ class TSMixingLayer(nn.Module):
         return y
 
 
-class TemporalProjection(nn.Module):
+class TSTemporalProjection(nn.Module):
 
     def __init__(self, input_length: int, forecast_length: int):
         self.lin = nn.Linear(in_features=input_length, out_features=forecast_length)
@@ -123,7 +123,7 @@ class TemporalProjection(nn.Module):
 class TSMixer(nn.Module):
 
     def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int):
-        self.temp_proj = TemporalProjection(input_length=input_length, forecast_length=forecast_length)
+        self.temp_proj = TSTemporalProjection(input_length=input_length, forecast_length=forecast_length)
         self.mixer_layers = []
         for _ in range(no_mixer_layers):
             self.mixer_layers.append(TSMixingLayer(input_length=input_length, no_feats=no_feats))
