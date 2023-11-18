@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
 from enum import Enum
 import os
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 from torch.utils.data import DataLoader
 import torch
 from loguru import logger
@@ -105,6 +105,11 @@ class TSMixer:
         def train_progress_json(self):
             os.makedirs(self.output_dir, exist_ok=True)
             return os.path.join(self.output_dir, "loss.json")
+
+        @property
+        def pred_val_dataset_json(self):
+            os.makedirs(self.output_dir, exist_ok=True)
+            return os.path.join(self.output_dir, "pred_val_dataset.json")
 
         def check_valid(self):
             assert 0 <= self.validation_split_holdout <= 1, "validation_split_holdout must be between 0 and 1"
@@ -219,6 +224,41 @@ class TSMixer:
         with torch.no_grad():
             batch_pred_hat = self.model(batch_input)
         return batch_pred_hat
+
+
+    def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List:
+
+        # Change batch size to 1 and not shuffle data for consistency
+        batch_size_save = self.conf.batch_size
+        shuffle_save = self.conf.shuffle
+        self.conf.batch_size = 1
+        self.conf.shuffle = False
+
+        # Create the loaders
+        _, loader_val = self.create_data_loaders_train_val()
+        
+        # Predict
+        data_json = []
+        for _ in tqdm(range(max_samples or len(loader_val)), desc="Predicting"):
+            batch_input, batch_pred = next(iter(loader_val))
+            batch_pred_hat = self.predict(batch_input)
+            data_json.append({
+                "pred_gt": batch_pred.tolist()[0],
+                "pred": batch_pred_hat.tolist()[0]
+                })
+            if save_inputs:
+                data_json[-1]["input"] = batch_input.tolist()[0]
+
+        # Save data to json
+        with open(self.conf.pred_val_dataset_json, "w") as f:
+            json.dump(data_json, f)
+            logger.info(f"Saved data to {f.name}")
+
+        # Reset options
+        self.conf.batch_size = batch_size_save
+        self.conf.shuffle = shuffle_save
+
+        return data_json
 
 
     def load_training_metadata_or_new(self, epoch_start: Optional[int] = None) -> TrainingMetadata:
