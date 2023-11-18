@@ -155,13 +155,23 @@ class TSMixer:
         for epoch in range(self.conf.num_epochs):
             logger.info(f"Epoch {epoch+1}/{self.conf.num_epochs}")
 
+            # Training
+            train_loss = 0
             for batch_input, batch_pred in tqdm(loader_train, desc="Training batches"):
-                self._train_step(batch_input, batch_pred, optimizer)
+                train_loss += self._train_step(batch_input, batch_pred, optimizer)
+
+            # Validation loss
+            val_loss = 0
+            for batch_input, batch_pred in tqdm(loader_val, desc="Validation batches"):
+                val_loss += self._compute_loss(batch_input, batch_pred).item()
+
+            # Log
+            train_loss /= len(loader_train)
+            val_loss /= len(loader_val)
+            logger.info(f"Training loss: {train_loss:.2f} val: {val_loss:.2f}")
 
 
-    def _train_step(self, batch_input: torch.Tensor, batch_pred: torch.Tensor, optimizer: torch.optim.Optimizer):
-        self.model.train()
-
+    def _compute_loss(self, batch_input: torch.Tensor, batch_pred: torch.Tensor) -> torch.Tensor:
         # Forward pass
         batch_pred_hat = self.model(batch_input)
 
@@ -173,8 +183,18 @@ class TSMixer:
         else:
             raise NotImplementedError(f"Loss {self.conf.loss} not implemented")
 
+        return loss
+
+    def _train_step(self, batch_input: torch.Tensor, batch_pred: torch.Tensor, optimizer: torch.optim.Optimizer) -> float:
+        self.model.train()
+
+        # Loss
+        loss = self._compute_loss(batch_input, batch_pred)
+
         # Backward pass
         loss.backward()
 
         # Update parameters
         optimizer.step()
+
+        return loss.item()

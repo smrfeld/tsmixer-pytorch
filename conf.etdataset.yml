@@ -6,9 +6,9 @@ data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
 
 batch_size: 32
 
-num_epochs: 10
+num_epochs: 100
 
-learning_rate: 0.001
+learning_rate: 0.0000001
 
 optimizer: Adam
 
@@ -23,5 +23,9 @@ initialize: from-scratch
 input_length: 512
 
 prediction_length: 96
+
+no_features: 7
+
+no_mixer_layers: 1
 
 loss: mse

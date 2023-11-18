@@ -16,4 +16,4 @@ if __name__ == "__main__":
             conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
 
         tsmixer = TSMixer(conf)
-        tsmixer.load_data_train_val()
+        tsmixer.train()
