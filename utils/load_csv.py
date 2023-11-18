@@ -2,7 +2,9 @@ import pandas as pd
 from torch.utils.data import DataLoader, Dataset, Subset
 from enum import Enum
 import torch
-from typing import Tuple, Callable, Optional
+from typing import Tuple, Callable, Optional, List
+from dataclasses import dataclass
+from mashumaro import DataClassDictMixin
 
 
 class ValidationSplit(Enum):
@@ -57,6 +59,12 @@ class DataframeDataset(Dataset):
             return self.get_sample(idx)
 
 
+@dataclass
+class DataNormalization(DataClassDictMixin):
+    mean_values: Optional[List[float]] = None
+    std_values: Optional[List[float]] = None
+
+
 def load_csv_dataset(
     csv_file: str, 
     batch_size: int, 
@@ -65,8 +73,9 @@ def load_csv_dataset(
     val_split: ValidationSplit, 
     val_split_holdout: float = 0.2, 
     shuffle: bool = True,
-    normalize_each_feature: bool = True
-    ) -> Tuple[DataLoader, DataLoader]:
+    normalize_each_feature: bool = True,
+    data_norm: Optional[DataNormalization] = None
+    ) -> Tuple[DataLoader, DataLoader, DataNormalization]:
 
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file, parse_dates=['date'])        
@@ -87,17 +96,20 @@ def load_csv_dataset(
         raise NotImplementedError(f"Validation split {val_split} not implemented")
 
     # Normalize each feature separately
-    if normalize_each_feature:
-        # Compute mean and std on training data from pandas dataframe
-        filtered_df = df.loc[idxs_train]
-        mean_values = torch.Tensor(filtered_df.mean().values)
-        std_values = torch.Tensor(filtered_df.std().values)
+    if data_norm is None:
+        data_norm = DataNormalization()
 
-        # Create a normalization function
-        transform = lambda x: (x - mean_values) / std_values
+        if normalize_each_feature:
+            # Compute mean and std on training data from pandas dataframe
+            filtered_df = df.loc[idxs_train]
+            data_norm.mean_values = list(filtered_df.mean().values)
+            data_norm.std_values = list(filtered_df.std().values)
 
-        # Apply the normalization function
-        dataset.transform = transform
+            # Create a normalization function
+            transform = lambda x: (x - torch.Tensor(data_norm.mean_values)) / torch.Tensor(data_norm.std_values)
+
+            # Apply the normalization function
+            dataset.transform = transform
 
     # Splits
     train_dataset = Subset(dataset, idxs_train)
@@ -105,4 +117,5 @@ def load_csv_dataset(
 
     loader_train = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     loader_val = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)
-    return loader_train, loader_val
+
+    return loader_train, loader_val, data_norm

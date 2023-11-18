@@ -1,4 +1,5 @@
 from .model import TSMixerModel
+from .load_csv import DataNormalization
 
 from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
@@ -111,6 +112,11 @@ class TSMixer:
             os.makedirs(self.output_dir, exist_ok=True)
             return os.path.join(self.output_dir, "pred_val_dataset.json")
 
+        @property
+        def data_norm_json(self):
+            os.makedirs(self.output_dir, exist_ok=True)
+            return os.path.join(self.output_dir, "data_norm.json")
+
         def check_valid(self):
             assert 0 <= self.validation_split_holdout <= 1, "validation_split_holdout must be between 0 and 1"
 
@@ -164,11 +170,11 @@ class TSMixer:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
 
 
-    def create_data_loaders_train_val(self) -> Tuple[DataLoader, DataLoader]:
+    def create_data_loaders_train_val(self, data_norm: Optional[DataNormalization]) -> Tuple[DataLoader, DataLoader, DataNormalization]:
         """Create the training and validation data loaders
 
         Returns:
-            Tuple[DataLoader, DataLoader]: Training and validation data loaders
+            Tuple[DataLoader, DataLoader, DataNormalization]: Training and validation data loaders
         """        
 
         if self.conf.data_src == self.conf.DataSrc.CSV_FILE:
@@ -182,7 +188,8 @@ class TSMixer:
                 prediction_length=self.conf.prediction_length,
                 val_split=ValidationSplit(self.conf.validation_split.value),
                 val_split_holdout=self.conf.validation_split_holdout,
-                shuffle=self.conf.shuffle
+                shuffle=self.conf.shuffle,
+                data_norm=data_norm
                 )
         else:
             raise NotImplementedError(f"data_src {self.conf.data_src} not implemented")
@@ -226,6 +233,19 @@ class TSMixer:
         return batch_pred_hat
 
 
+    def _load_data_norm(self) -> Optional[DataNormalization]:
+        if os.path.exists(self.conf.data_norm_json):
+            with open(self.conf.data_norm_json, "r") as f:
+                return DataNormalization.from_dict(json.load(f))
+        else:
+            return None
+
+
+    def _write_data_norm(self, data_norm: DataNormalization):
+        with open(self.conf.data_norm_json, "w") as f:
+            json.dump(data_norm.to_dict(), f, indent=3)
+
+
     def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List:
 
         # Change batch size to 1 and not shuffle data for consistency
@@ -234,8 +254,11 @@ class TSMixer:
         self.conf.batch_size = 1
         self.conf.shuffle = False
 
+        # Load the data normalization if it exists and use it
+        data_norm = self._load_data_norm()
+
         # Create the loaders
-        _, loader_val = self.create_data_loaders_train_val()
+        _, loader_val, _ = self.create_data_loaders_train_val(data_norm)
         
         # Predict
         data_json = []
@@ -294,18 +317,24 @@ class TSMixer:
         # Load if needed
         if self.conf.initialize == self.conf.Initialize.FROM_LATEST_CHECKPOINT:
             epoch_start, val_loss_best = self.load_checkpoint(fname=self.conf.checkpoint_latest, optimizer=optimizer)
+            data_norm = self._load_data_norm()
         elif self.conf.initialize == self.conf.Initialize.FROM_BEST_CHECKPOINT:
             epoch_start, val_loss_best = self.load_checkpoint(fname=self.conf.checkpoint_best, optimizer=optimizer)
+            data_norm = self._load_data_norm()
         elif self.conf.initialize == self.conf.Initialize.FROM_SCRATCH:
             epoch_start, val_loss_best = 0, float("inf")
             # Save initial weights
             self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
+            data_norm = None
         else:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
         train_data = self.load_training_metadata_or_new(epoch_start)
 
         # Create the loaders
-        loader_train, loader_val = self.create_data_loaders_train_val()
+        loader_train, loader_val, data_norm = self.create_data_loaders_train_val(data_norm)
+
+        # Write data normalization
+        self._write_data_norm(data_norm)
 
         # Train
         for epoch in range(epoch_start, self.conf.num_epochs):
