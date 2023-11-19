@@ -1,4 +1,4 @@
-from .tsmixer_conf import TSMixerConf, TrainingMetadata
+from .tsmixer_conf import TSMixerConf, TrainingMetadata, makedirs
 from .model import TSMixerModel
 from .load_csv import DataNormalization
 
@@ -12,6 +12,7 @@ import time
 import shutil
 from dataclasses import dataclass
 from mashumaro import DataClassDictMixin
+import yaml
 
 
 class TSMixer:
@@ -195,11 +196,18 @@ class TSMixer:
                     time.sleep(1)
                 print("")
                 shutil.rmtree(self.conf.output_dir)
-            os.makedirs(self.conf.output_dir, exist_ok=True)
+            makedirs(self.conf.output_dir)
 
             # Save initial weights
             self._save_checkpoint(epoch=epoch_start, optimizer=optimizer, loss=val_loss_best, fname=self.conf.checkpoint_init)
             data_norm = None
+
+            # Copy the config to the output directory for reference
+            fname_conf = os.path.join(self.conf.output_dir, "conf.yml")
+            makedirs(self.conf.output_dir)
+            with open(fname_conf, "w") as f:
+                yaml.dump(self.conf.to_dict(), f, indent=3)
+                logger.info(f"Saved configuration to {f.name}")
         
         else:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")

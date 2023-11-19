@@ -13,7 +13,8 @@ DATASET_TO_URL = {
 def download_etdataset(url: str, download_directory: str):
 
     # Make sure the directory exists, create it if not
-    os.makedirs(download_directory, exist_ok=True)
+    if download_directory != "":
+        os.makedirs(download_directory, exist_ok=True)
 
     # Extract the file name from the URL
     file_name = os.path.join(download_directory, os.path.basename(url))

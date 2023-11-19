@@ -10,6 +10,11 @@ from loguru import logger
 import json
 
 
+def makedirs(d: str):
+    if d != "":
+        os.makedirs(d, exist_ok=True)
+
+
 @dataclass
 class TSMixerConf(DataClassDictMixin):
 
@@ -92,38 +97,38 @@ class TSMixerConf(DataClassDictMixin):
 
     @property
     def image_dir(self):
-        os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(os.path.join(self.output_dir, "images"), exist_ok=True)
+        makedirs(self.output_dir)
+        makedirs(os.path.join(self.output_dir, "images"))
         return os.path.join(self.output_dir, "images")
 
     @property
     def checkpoint_init(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        makedirs(self.output_dir)
         return os.path.join(self.output_dir, "init.pth")
 
     @property
     def checkpoint_best(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        makedirs(self.output_dir)
         return os.path.join(self.output_dir, "best.pth")
 
     @property
     def checkpoint_latest(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        makedirs(self.output_dir)
         return os.path.join(self.output_dir, "latest.pth")
 
     @property
     def train_progress_json(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        makedirs(self.output_dir)
         return os.path.join(self.output_dir, "loss.json")
 
     @property
     def pred_val_dataset_json(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        makedirs(self.output_dir)
         return os.path.join(self.output_dir, "pred_val_dataset.json")
 
     @property
     def data_norm_json(self):
-        os.makedirs(self.output_dir, exist_ok=True)
+        makedirs(self.output_dir)
         return os.path.join(self.output_dir, "data_norm.json")
 
     def check_valid(self):
@@ -169,7 +174,7 @@ class TSMixerConf(DataClassDictMixin):
             train_data (TrainingMetadata): _description_
         """        
         if os.path.dirname(self.train_progress_json) != "":
-            os.makedirs(os.path.dirname(self.train_progress_json), exist_ok=True)
+            makedirs(os.path.dirname(self.train_progress_json))
         with open(self.train_progress_json, "w") as f:
             json.dump(train_data.to_dict(), f, indent=3)
 
