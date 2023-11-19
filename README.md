@@ -56,6 +56,15 @@ python main.py --conf conf.etdataset.gridsearch.yml --command grid-search
 
 Note that the format of the config file is different for the grid search. The format is defined by [utils/tsmixer_grid_search_conf.py](utils/tsmixer_grid_search_conf.py).
 
+### Tests
+
+Run the tests with `pytest`:
+
+```bash
+cd tests
+pytest
+```
+
 ## Implementation notes from the paper
 
 ### Training parameters
