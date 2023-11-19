@@ -65,3 +65,15 @@ i.e. in th feature mixing block, where there are two fully connected layers, the
 > Another modification is using pre-normalization (Xiong et al., 2020) instead of post-normalization in residual blocks to keep the input scale.
 
 i.e. apply normalization to the input of the feature mixing block, instead of the output.
+
+## Standardization of data
+
+> Specifically, we standardize each covariate independently and do not re-scale the data when evaluating the performance. 
+
+> Global normalization: Global normalization standardizes all variates of time series independently as a data pre-processing. The standardized data is then used for training and evaluation. It is a common setup in long-term time series forecasting experiments to prevent from the affects of different variate scales. For M5, since there is only one target time series (sales), we do not apply the global normalization.
+
+Standardize each feature independently based on the training split, then use the same mean and standard deviation for the test set.
+
+> We train each model with a maximum 100 epochs and do early stopping if the validation loss is not improved after 5 epochs.
+
+Max 100 epochs, early stopping after 5 epochs without improvement.

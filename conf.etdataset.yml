@@ -27,10 +27,10 @@ initialize: from-scratch # from-best-checkpoint
 batch_size: 32
 
 # Optional: Number of epochs
-num_epochs: 200
+num_epochs: 100
 
 # Optional: Learning rate
-learning_rate: 0.001
+learning_rate: 0.00001
 
 # Optional: Optimizer - Adam, SGD, RMSprop, etc
 optimizer: Adam
