@@ -126,7 +126,6 @@ class TSMixerConf(DataClassDictMixin):
     def check_valid(self):
         assert 0 <= self.validation_split_holdout <= 1, "validation_split_holdout must be between 0 and 1"
 
-
     def load_training_metadata_or_new(self, epoch_start: Optional[int] = None) -> "TrainingMetadata":
         """Load the training progress from a JSON file, or create a new one
 
