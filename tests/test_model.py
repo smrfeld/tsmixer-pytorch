@@ -19,7 +19,7 @@ class TestModel:
 
 
     def test_tsmlpfeat(self):
-        mlp = TSMLPfeat(width=5, dropout=0.5)
+        mlp = TSMLPfeat(width_input_output=5, dropout=0.5, width_hidden=10)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = mlp(data)
         assert data_out.shape == data.shape
@@ -40,14 +40,14 @@ class TestModel:
 
 
     def test_tsmixinglayer(self):
-        ml = TSMixingLayer(input_length=100, no_feats=5, dropout=0.5)
+        ml = TSMixingLayer(input_length=100, no_feats=5, dropout=0.5, feat_mixing_hidden_channels=10)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = ml(data)
         assert data_out.shape == data.shape
 
 
     def test_tsfeatmixingresblock(self):
-        fmrb = TSFeatMixingResBlock(width_feats=5, dropout=0.5)
+        fmrb = TSFeatMixingResBlock(width_feats=5, dropout=0.5, width_feats_hidden=10)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = fmrb(data)
         assert data_out.shape == data.shape
@@ -67,7 +67,8 @@ class TestModel:
             forecast_length=10,
             no_feats=5,
             no_mixer_layers=3,
-            dropout=0.5
+            dropout=0.5,
+            feat_mixing_hidden_channels=5
             )
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         forecast = ts(data)
@@ -82,7 +83,8 @@ class TestModel:
             forecast_length=10,
             no_feats=5,
             no_mixer_layers=3,
-            dropout=0.5
+            dropout=0.5,
+            feat_mixing_hidden_channels=5
             )
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         forecast = ts(data)

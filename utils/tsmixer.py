@@ -93,6 +93,9 @@ class TSMixer:
         dropout: float = 0.5
         "Dropout"
 
+        feat_mixing_hidden_channels: Optional[int] = None
+        "Number of hidden channels in the feature mixing MLP. If None, uses same as input features."
+
         @property
         def checkpoint_init(self):
             os.makedirs(self.output_dir, exist_ok=True)
@@ -162,6 +165,7 @@ class TSMixer:
             input_length=self.conf.input_length,
             forecast_length=self.conf.prediction_length,
             no_feats=self.conf.no_features,
+            feat_mixing_hidden_channels=self.conf.feat_mixing_hidden_channels or self.conf.no_features,
             no_mixer_layers=self.conf.no_mixer_layers,
             dropout=self.conf.dropout
             )
@@ -177,8 +181,11 @@ class TSMixer:
             raise NotImplementedError(f"Initialize {self.conf.initialize} not implemented")
 
 
-    def create_data_loaders_train_val(self, data_norm: Optional[DataNormalization]) -> Tuple[DataLoader, DataLoader, DataNormalization]:
+    def create_data_loaders_train_val(self, data_norm: Optional[DataNormalization] = None) -> Tuple[DataLoader, DataLoader, DataNormalization]:
         """Create the training and validation data loaders
+
+        Args:
+            data_norm (Optional[DataNormalization], optional): Data normalization to use, otherwise will be calculated. Defaults to None.
 
         Returns:
             Tuple[DataLoader, DataLoader, DataNormalization]: Training and validation data loaders

@@ -43,7 +43,7 @@ def tsmixer(conf: TSMixer.Conf):
 class TestTsMixer:
 
     def test_load_data(self, tsmixer: TSMixer):
-        loader_train, loader_val = tsmixer.create_data_loaders_train_val()
+        loader_train, loader_val, _ = tsmixer.create_data_loaders_train_val()
         for loader in [loader_train, loader_val]:
             batch_input, batch_pred = next(iter(loader))
             assert batch_input.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, tsmixer.conf.no_features)
