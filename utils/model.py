@@ -2,40 +2,6 @@ import torch.nn as nn
 import torch
 
 
-class TSMLPtime(nn.Module):
-
-    def __init__(self, width: int, dropout: float):
-        super(TSMLPtime, self).__init__()
-        self.lin = nn.Linear(in_features=width, out_features=width)
-        self.dropout = nn.Dropout(p=dropout)
-        self.act = nn.ReLU()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.lin(x)
-        x = self.act(x)
-        x = self.dropout(x)
-        return x
-
-
-class TSMLPfeat(nn.Module):
-
-    def __init__(self, width_input_output: int, width_hidden: int, dropout: float):
-        super(TSMLPfeat, self).__init__()
-        self.lin_1 = nn.Linear(in_features=width_input_output, out_features=width_hidden)
-        self.lin_2 = nn.Linear(in_features=width_hidden, out_features=width_input_output)
-        self.dropout_1 = nn.Dropout(p=dropout)
-        self.dropout_2 = nn.Dropout(p=dropout)
-        self.act = nn.ReLU()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.lin_1(x)
-        x = self.act(x)
-        x = self.dropout_1(x)
-        x = self.lin_2(x)
-        x = self.dropout_2(x)
-        return x
-
-
 class TSBatchNorm2d(nn.Module):
 
     def __init__(self):
@@ -60,8 +26,11 @@ class TSTimeMixingResBlock(nn.Module):
 
     def __init__(self, width_time: int, dropout: float):
         super(TSTimeMixingResBlock, self).__init__()
-        self.mlp = TSMLPtime(width=width_time, dropout=dropout)
         self.norm = TSBatchNorm2d()
+
+        self.lin = nn.Linear(in_features=width_time, out_features=width_time)
+        self.dropout = nn.Dropout(p=dropout)
+        self.act = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input x: (batch_size, time, features)
@@ -71,11 +40,15 @@ class TSTimeMixingResBlock(nn.Module):
         y = torch.transpose(y, 1, 2)
         
         # Apply MLP to time dimension
-        y = self.mlp(y)
-        
+        y = self.lin(y)
+        y = self.act(y)
+
         # Rotate back such that shape is (batch_size, time, features)
         y = torch.transpose(y, 1, 2)
-        
+
+        # Dropout
+        y = self.dropout(y)
+                
         # Add residual connection
         return x + y
 
@@ -84,15 +57,25 @@ class TSFeatMixingResBlock(nn.Module):
 
     def __init__(self, width_feats: int, width_feats_hidden: int, dropout: float):
         super(TSFeatMixingResBlock, self).__init__()
-        self.mlp = TSMLPfeat(width_input_output=width_feats, width_hidden=width_feats_hidden, dropout=dropout)
         self.norm = TSBatchNorm2d()
+
+        self.lin_1 = nn.Linear(in_features=width_feats, out_features=width_feats_hidden)
+        self.lin_2 = nn.Linear(in_features=width_feats_hidden, out_features=width_feats)
+        self.dropout_1 = nn.Dropout(p=dropout)
+        self.dropout_2 = nn.Dropout(p=dropout)
+        self.act = nn.ReLU()
+
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input x: (batch_size, time, features)
         y = self.norm(x)
-                
+        
         # Apply MLP to feat dimension
-        y = self.mlp(y)
+        y = self.lin_1(y)
+        y = self.act(y)
+        y = self.dropout_1(y)
+        y = self.lin_2(y)
+        y = self.dropout_2(y)
                 
         # Add residual connection
         return x + y

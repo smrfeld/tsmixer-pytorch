@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 
-from utils import TSMixerModelExclRIN, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSMLPfeat, TSTemporalProjection, TSTimeMixingResBlock, TSMLPtime, TSMixerModel
+from utils import TSMixerModelExclRIN, TSBatchNorm2d, TSFeatMixingResBlock, TSMixingLayer, TSTemporalProjection, TSTimeMixingResBlock, TSMixerModel
 
 import pytest
 import torch
@@ -15,20 +15,6 @@ class TestModel:
         bn = TSBatchNorm2d()
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = bn(data)
-        assert data_out.shape == data.shape
-
-
-    def test_tsmlpfeat(self):
-        mlp = TSMLPfeat(width_input_output=5, dropout=0.5, width_hidden=10)
-        data = self._time_series(batch_size=32, input_length=100, no_feats=5)
-        data_out = mlp(data)
-        assert data_out.shape == data.shape
-
-    
-    def test_tsmlptime(self):
-        mlp = TSMLPtime(width=100, dropout=0.5)
-        data = self._time_series(batch_size=32, input_length=5, no_feats=100) # Note: time and features are swapped
-        data_out = mlp(data)
         assert data_out.shape == data.shape
 
     

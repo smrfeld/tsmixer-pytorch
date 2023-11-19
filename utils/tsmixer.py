@@ -241,14 +241,14 @@ class TSMixer:
             train_loss /= len(loader_train)
             val_loss /= len(loader_val)
             dur = time.time() - t0
-            logger.info(f"Training loss: {train_loss:.2f} val: {val_loss:.2f} duration: {dur:.2f}s")
+            logger.info(f"Training loss: {train_loss:.5f} val: {val_loss:.5f} duration: {dur:.2f}s")
 
             # Store metadata about training
             train_data.epoch_to_data[epoch] = TrainingMetadata.EpochData(epoch=epoch, train_loss=train_loss, val_loss=val_loss, duration_seconds=dur)
 
             # Save checkpoint
             if val_loss < val_loss_best:
-                logger.info(f"New best validation loss: {val_loss:.2f}")
+                logger.info(f"New best validation loss: {val_loss:.5f}")
                 self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_best)
                 val_loss_best = val_loss
                 epoch_last_improvement = epoch
@@ -285,7 +285,7 @@ class TSMixer:
         batch_pred_hat = self.model(batch_input)
 
         # Compute loss
-        loss = torch.nn.functional.mse_loss(batch_pred_hat, batch_pred)
+        loss = torch.nn.functional.mse_loss(batch_pred_hat, batch_pred, reduction='mean')
         return loss
 
 
