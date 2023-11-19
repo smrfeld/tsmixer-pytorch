@@ -1,0 +1,19 @@
+---
+# Any number of parameter ranges to run the grid search over
+param_ranges:
+- input_lengths: [512]
+  prediction_lengths: [96]
+  learning_rates: [0.00001]
+  no_mixer_layers: [2,4]
+  dropouts: [0.3,0.5]
+  feat_mixing_hidden_channels: [64,256]
+
+# Output directory - each run will be saved in a subdirectory of this
+output_dir: output.etdataset.gridsearch
+
+# Num features in the dataset
+no_features: 7
+
+# Data source
+data_src: csv-file
+data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
