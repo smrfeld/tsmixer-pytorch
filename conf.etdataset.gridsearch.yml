@@ -16,4 +16,4 @@ no_features: 7
 
 # Data source
 data_src: csv-file
-data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
+data_src_csv: ETTh1.csv

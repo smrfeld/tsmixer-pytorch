@@ -18,7 +18,7 @@ no_mixer_layers: 2
 data_src: csv-file
 
 # REQUIRED: Path to the data source
-data_src_csv: ../pytorch-tsmixer-data/ETTh1.csv
+data_src_csv: data/ETTh1.csv
 
 # Optional: How to initialize the model (restarts training from scratch if set to from-scratch)
 initialize: from-scratch # from-best-checkpoint

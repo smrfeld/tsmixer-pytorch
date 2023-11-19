@@ -14,6 +14,48 @@ You can find the raw ETDataset data [here](https://github.com/zhouhaoyi/ETDatase
 * [ETTm1.csv](https://github.com/zhouhaoyi/ETDataset/raw/11ab373cf9c9f5be7698e219a5a170e1b1c8a930/ETT-small/ETTm1.csv)
 * [ETTm2.csv](https://github.com/zhouhaoyi/ETDataset/raw/11ab373cf9c9f5be7698e219a5a170e1b1c8a930/ETT-small/ETTm2.csv)
 
+You can use the `download_etdataset.py` script to download the data:
+
+```bash
+python download_etdataset.py
+```
+
+## Running
+
+Install the requirements:
+
+```bash
+pip install -r requirements.txt
+```
+
+Train the model:
+
+```bash
+python main.py --conf conf.etdataset.yml --command train
+```
+
+The output will be in the `output_dir` directory specified in the config file. The config file is in YAML format. The format is defined by [utils/tsmixer_conf.py](utils/tsmixer_conf.py).
+
+Plot the loss curves:
+
+```bash
+python main.py --conf conf.etdataset.yml --command loss --show
+```
+
+Predict some of the validation data and plot it:
+
+```bash
+python main.py --conf conf.etdataset.yml --command predict --show
+```
+
+Run a grid search over the hyperparameters:
+
+```bash
+python main.py --conf conf.etdataset.gridsearch.yml --command grid-search
+```
+
+Note that the format of the config file is different for the grid search. The format is defined by [utils/tsmixer_grid_search_conf.py](utils/tsmixer_grid_search_conf.py).
+
 ## Implementation notes from the paper
 
 ### Training parameters
