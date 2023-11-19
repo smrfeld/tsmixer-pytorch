@@ -181,6 +181,7 @@ class TSMixer:
         self.conf.write_data_norm(data_norm)
 
         # Train
+        epoch_last_improvement = None
         for epoch in range(epoch_start, self.conf.num_epochs):
             logger.info(f"Epoch {epoch+1}/{self.conf.num_epochs}")
             t0 = time.time()
@@ -210,8 +211,14 @@ class TSMixer:
                 logger.info(f"New best validation loss: {val_loss:.2f}")
                 self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_best)
                 val_loss_best = val_loss
+                epoch_last_improvement = epoch
             self._save_checkpoint(epoch=epoch, optimizer=optimizer, loss=val_loss, fname=self.conf.checkpoint_latest)
             self.conf.write_training_metadata(train_data)
+
+            # Early stopping
+            if epoch_last_improvement is not None and self.conf.early_stopping_patience is not None and epoch - epoch_last_improvement >= self.conf.early_stopping_patience:
+                logger.info(f"Stopping early after {epoch - epoch_last_improvement} epochs without improvement in validation loss.")
+                break
 
 
     def _save_checkpoint(self, epoch: int, optimizer: torch.optim.Optimizer, loss: float, fname: str):

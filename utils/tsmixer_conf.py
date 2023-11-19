@@ -87,6 +87,9 @@ class TSMixerConf(DataClassDictMixin):
     feat_mixing_hidden_channels: Optional[int] = None
     "Number of hidden channels in the feature mixing MLP. If None, uses same as input features."
 
+    early_stopping_patience: Optional[int] = 5
+    "Early stopping patience. If the validation loss does not improve over this many epochs, stop early. If None, no early stopping is used."
+
     @property
     def image_dir(self):
         os.makedirs(self.output_dir, exist_ok=True)

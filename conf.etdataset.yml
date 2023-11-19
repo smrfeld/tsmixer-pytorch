@@ -6,7 +6,7 @@ output_dir: output.etdataset
 input_length: 512
 
 # REQUIRED: Prediction length
-prediction_length: 192
+prediction_length: 96
 
 # REQUIRED: Number of features
 no_features: 7
