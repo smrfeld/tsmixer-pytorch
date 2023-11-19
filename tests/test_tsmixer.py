@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 
-from utils import TSMixer
+from utils import TSMixer, TSMixerConf
 
 import pytest
 import torch
@@ -17,13 +17,13 @@ def conf():
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     
-    yield TSMixer.Conf(
+    yield TSMixerConf(
         input_length=20,
         prediction_length=5,
         no_features=TEST_CSV_NO_FEATS,
         no_mixer_layers=2,
         output_dir=output_dir,
-        data_src=TSMixer.Conf.DataSrc.CSV_FILE,
+        data_src=TSMixerConf.DataSrc.CSV_FILE,
         data_src_csv="test_csv.csv",
         batch_size=4,
         num_epochs=10,
@@ -36,14 +36,14 @@ def conf():
     
 
 @pytest.fixture
-def tsmixer(conf: TSMixer.Conf):
+def tsmixer(conf: TSMixerConf):
     return TSMixer(conf=conf)
 
 
 class TestTsMixer:
 
     def test_load_data(self, tsmixer: TSMixer):
-        loader_train, loader_val, _ = tsmixer.create_data_loaders_train_val()
+        loader_train, loader_val, _ = tsmixer.conf.create_data_loaders_train_val()
         for loader in [loader_train, loader_val]:
             batch_input, batch_pred = next(iter(loader))
             assert batch_input.shape == (tsmixer.conf.batch_size, tsmixer.conf.input_length, tsmixer.conf.no_features)

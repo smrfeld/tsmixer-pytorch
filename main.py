@@ -1,4 +1,4 @@
-from utils import TSMixer, plot_preds, plot_loss
+from utils import TSMixer, plot_preds, plot_loss, TSMixerConf
 
 
 import argparse
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     if args.command == "train":
         assert args.conf is not None, "Must provide a configuration file"
         with open(args.conf, "r") as f:
-            conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
+            conf = TSMixerConf.from_dict(yaml.safe_load(f))
         tsmixer = TSMixer(conf)
         tsmixer.train()
 
@@ -25,10 +25,10 @@ if __name__ == "__main__":
 
         assert args.conf is not None, "Must provide a configuration file"
         with open(args.conf, "r") as f:
-            conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
+            conf = TSMixerConf.from_dict(yaml.safe_load(f))
 
         # Load best checkpoint
-        conf.initialize = TSMixer.Conf.Initialize.FROM_BEST_CHECKPOINT
+        conf.initialize = TSMixerConf.Initialize.FROM_BEST_CHECKPOINT
 
         tsmixer = TSMixer(conf)
 
@@ -42,10 +42,9 @@ if __name__ == "__main__":
 
         assert args.conf is not None, "Must provide a configuration file"
         with open(args.conf, "r") as f:
-            conf = TSMixer.Conf.from_dict(yaml.safe_load(f))
+            conf = TSMixerConf.from_dict(yaml.safe_load(f))
 
-        tsmixer = TSMixer(conf)
-        train_data = tsmixer.load_training_metadata_or_new()
+        train_data = conf.load_training_metadata_or_new()
         plot_loss(train_data, show=args.show)
 
     else:
