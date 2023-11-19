@@ -82,6 +82,11 @@ class TSMixer:
             torch.Tensor: Predicted output of shape (batch_size, prediction_length (time), no_features)
         """        
         self.model.eval()
+
+        # Check size
+        assert batch_input.shape[1] == self.conf.input_length, f"Input length {batch_input.shape[1]} does not match configuration {self.conf.input_length}"
+        assert batch_input.shape[2] == self.conf.no_features, f"Number of features {batch_input.shape[2]} does not match configuration {self.conf.no_features}"
+
         with torch.no_grad():
             batch_pred_hat = self.model(batch_input)
         return batch_pred_hat
@@ -104,9 +109,17 @@ class TSMixer:
 
     @dataclass
     class PredData(DataClassDictMixin):
+        """Prediction data
+        """        
+
         pred_gt: List[List[float]]
+        "Ground truth prediction"
+
         pred: List[List[float]]
+        "Model prediction"
+
         inputs: Optional[List[List[float]]] = None
+        "Inputs"
 
 
     def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List[PredData]:
@@ -211,9 +224,10 @@ class TSMixer:
 
             # Validation loss
             self.model.eval()
-            val_loss = 0
-            for batch_input, batch_pred in tqdm(loader_val, desc="Validation batches"):
-                val_loss += self._compute_loss(batch_input, batch_pred).item()
+            with torch.no_grad():
+                val_loss = 0
+                for batch_input, batch_pred in tqdm(loader_val, desc="Validation batches"):
+                    val_loss += self._compute_loss(batch_input, batch_pred).item()
 
             # Log
             train_loss /= len(loader_train)
