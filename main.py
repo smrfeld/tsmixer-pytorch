@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
         tsmixer = TSMixer(conf)
 
-        data = tsmixer.predict_val_dataset(max_samples=10)
+        data = tsmixer.predict_val_dataset(max_samples=10, save_inputs=False)
 
         data_plt = data[0]
         assert args.no_feats_plot is not None, "Must provide number of features to plot"

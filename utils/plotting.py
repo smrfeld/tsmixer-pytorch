@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional
 from loguru import logger
 
 
-def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_plot: int, fname_save: Optional[str] = None, show: bool = True):
+def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_plot: int, fname_save: Optional[str] = None, inputs: Optional[List[List[float]]] = None, show: bool = True):
     """Plot predictions
 
     Args:
@@ -12,6 +12,7 @@ def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_p
         preds_gt (List[List[float]]): Predictions of shape (no_samples, no_feats)
         no_feats_plot (int): Number of features to plot
         fname_save (Optional[str], optional): File name to save the plot. Defaults to None.
+        inputs (Optional[List[List[float]]], optional): Input of shape (no_samples, no_feats)
         show (bool): Show the plot
     """    
     import plotly.graph_objects as go
@@ -29,11 +30,18 @@ def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_p
 
     fig = make_subplots(rows=no_rows, cols=no_cols, subplot_titles=[f"Feature {ifeat}" for ifeat in range(no_feats_plot)])
 
+    no_inputs = len(inputs) if inputs is not None else 0
+    x_preds = list(range(no_inputs, no_inputs + len(preds)))
     for ifeat in range(no_feats_plot):
         row = int(ifeat / no_cols) + 1
         col = (ifeat % no_cols) + 1
-        fig.add_trace(go.Scatter(y=[pred[ifeat] for pred in preds_gt], mode="lines", name=f"Ground truth", line=dict(color="red"), showlegend=ifeat==0), row=row, col=col)
-        fig.add_trace(go.Scatter(y=[pred[ifeat] for pred in preds], mode="lines", name=f"Model", line=dict(color="blue"), showlegend=ifeat==0), row=row, col=col)
+
+        if inputs is not None:
+            x_inputs = list(range(len(inputs)))
+            fig.add_trace(go.Scatter(x=x_inputs, y=[in_y[ifeat] for in_y in inputs], mode="lines", name=f"Inputs", line=dict(color="black"), showlegend=ifeat==0), row=row, col=col)
+
+        fig.add_trace(go.Scatter(x=x_preds, y=[pred[ifeat] for pred in preds_gt], mode="lines", name=f"Ground truth", line=dict(color="red"), showlegend=ifeat==0), row=row, col=col)
+        fig.add_trace(go.Scatter(x=x_preds, y=[pred[ifeat] for pred in preds], mode="lines", name=f"Model", line=dict(color="blue"), showlegend=ifeat==0), row=row, col=col)
 
     fig.update_layout(
         height=300*no_rows, 

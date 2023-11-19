@@ -6,13 +6,13 @@ output_dir: output.etdataset
 input_length: 512
 
 # REQUIRED: Prediction length
-prediction_length: 96
+prediction_length: 192
 
 # REQUIRED: Number of features
 no_features: 7
 
 # REQUIRED: Number of mixer layers
-no_mixer_layers: 6
+no_mixer_layers: 4
 
 # REQUIRED: Data source
 data_src: csv-file
@@ -30,7 +30,7 @@ batch_size: 32
 num_epochs: 200
 
 # Optional: Learning rate
-learning_rate: 0.0001
+learning_rate: 0.001
 
 # Optional: Optimizer - Adam, SGD, RMSprop, etc
 optimizer: Adam
@@ -49,4 +49,4 @@ validation_split_holdout: 0.2
 dropout: 0.9
 
 # Optional: Number of hidden channels in the feature mixing layer
-feat_mixing_hidden_channels: 512
+feat_mixing_hidden_channels: 256
