@@ -1,16 +1,17 @@
 from .tsmixer import TSMixer
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from loguru import logger
 
 
-def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_plot: int, show: bool):
+def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_plot: int, fname_save: Optional[str] = None, show: bool = True):
     """Plot predictions
 
     Args:
         preds (List[List[float]]): Predictions of shape (no_samples, no_feats)
         preds_gt (List[List[float]]): Predictions of shape (no_samples, no_feats)
         no_feats_plot (int): Number of features to plot
+        fname_save (Optional[str], optional): File name to save the plot. Defaults to None.
         show (bool): Show the plot
     """    
     import plotly.graph_objects as go
@@ -43,17 +44,22 @@ def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_p
         yaxis_title_text="Signal",
         )
 
+    if fname_save is not None:
+        fig.write_image(fname_save)
+        logger.info(f"Saved plot to {fname_save}")
+
     if show:
         fig.show()
 
     return fig
 
 
-def plot_loss(train_data: TSMixer.TrainingMetadata, show: bool):
+def plot_loss(train_data: TSMixer.TrainingMetadata, fname_save: Optional[str] = None, show: bool = True):
     """Plot loss
 
     Args:
         train_data (TSMixer.TrainingMetadata): Training metadata
+        fname_save (Optional[str], optional): File name to save the plot. Defaults to None.
         show (bool): Show the plot
     """    
     import plotly.graph_objects as go
@@ -74,7 +80,11 @@ def plot_loss(train_data: TSMixer.TrainingMetadata, show: bool):
         font=dict(size=18),
         )
 
+    if fname_save is not None:
+        fig.write_image(fname_save)
+        logger.info(f"Saved plot to {fname_save}")
+
     if show:
         fig.show()
-    
+
     return fig

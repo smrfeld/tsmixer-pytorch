@@ -1,8 +1,8 @@
 from utils import TSMixer, plot_preds, plot_loss, TSMixerConf
 
-
 import argparse
 import yaml
+import os
 
 
 if __name__ == "__main__":
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
         data_plt = data[0]
         assert args.no_feats_plot is not None, "Must provide number of features to plot"
-        plot_preds(data_plt["pred"], data_plt["pred_gt"], no_feats_plot=args.no_feats_plot, show=args.show)
+        plot_preds(data_plt["pred"], data_plt["pred_gt"], no_feats_plot=args.no_feats_plot, show=args.show, fname_save=os.path.join(conf.image_dir, "preds.png"))
 
     elif args.command == "loss":
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
             conf = TSMixerConf.from_dict(yaml.safe_load(f))
 
         train_data = conf.load_training_metadata_or_new()
-        plot_loss(train_data, show=args.show)
+        plot_loss(train_data, show=args.show, fname_save=os.path.join(conf.image_dir, "loss.png"))
 
     else:
         raise NotImplementedError(f"Command {args.command} not implemented")
