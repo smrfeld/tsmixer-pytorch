@@ -201,7 +201,7 @@ class TSMixerConf(DataClassDictMixin):
                 val_split=ValidationSplit(self.validation_split.value),
                 val_split_holdout=self.validation_split_holdout,
                 shuffle=self.shuffle,
-                data_norm=data_norm
+                data_norm_exist=data_norm
                 )
         else:
             raise NotImplementedError(f"data_src {self.data_src} not implemented")

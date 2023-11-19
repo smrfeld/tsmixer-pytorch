@@ -12,7 +12,7 @@ prediction_length: 96
 no_features: 7
 
 # REQUIRED: Number of mixer layers
-no_mixer_layers: 2
+no_mixer_layers: 4
 
 # REQUIRED: Data source
 data_src: csv-file

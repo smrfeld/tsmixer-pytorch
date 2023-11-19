@@ -97,7 +97,7 @@ def load_csv_dataset(
     val_split_holdout: float = 0.2, 
     shuffle: bool = True,
     normalize_each_feature: bool = True,
-    data_norm: Optional[DataNormalization] = None
+    data_norm_exist: Optional[DataNormalization] = None
     ) -> Tuple[DataLoader, DataLoader, DataNormalization]:
     """Load a CSV dataset
 
@@ -110,7 +110,7 @@ def load_csv_dataset(
         val_split_holdout (float, optional): Holdout fraction for validation (last X% of data) - only used for TEMPORAL_HOLDOUT. Defaults to 0.2.
         shuffle (bool, optional): True to shuffle data. Defaults to True.
         normalize_each_feature (bool, optional): Normalize each feature. Defaults to True.
-        data_norm (Optional[DataNormalization], optional): Normalization data - apply this instead of recalculating. Defaults to None.
+        data_norm_exist (Optional[DataNormalization], optional): Existing normalization data - apply this instead of recalculating. Defaults to None.
 
     Returns:
         Tuple[DataLoader, DataLoader, DataNormalization]: Training and validation data loaders, and normalization data
@@ -135,22 +135,22 @@ def load_csv_dataset(
         raise NotImplementedError(f"Validation split {val_split} not implemented")
 
     # Normalize each feature separately        
-    if data_norm is None:
-        data_norm = DataNormalization()
+    if data_norm_exist is None:
+        data_norm_exist = DataNormalization()
 
         # Compute mean and std on training data from pandas dataframe
         filtered_df = df.loc[idxs_train]
-        data_norm.mean_each_feature = list(filtered_df.mean().values)
-        data_norm.std_each_feature = list(filtered_df.std().values)
-        logger.debug(f"Computed data mean for each feature: {data_norm.mean_each_feature}")
-        logger.debug(f"Computed data std for each feature: {data_norm.std_each_feature}")
+        data_norm_exist.mean_each_feature = list(filtered_df.mean().values)
+        data_norm_exist.std_each_feature = list(filtered_df.std().values)
+        logger.debug(f"Computed data mean for each feature: {data_norm_exist.mean_each_feature}")
+        logger.debug(f"Computed data std for each feature: {data_norm_exist.std_each_feature}")
 
     if normalize_each_feature:
-        assert data_norm.mean_each_feature is not None, "Must provide data mean for each feature"
-        assert data_norm.std_each_feature is not None, "Must provide data std for each feature"
+        assert data_norm_exist.mean_each_feature is not None, "Must provide data mean for each feature"
+        assert data_norm_exist.std_each_feature is not None, "Must provide data std for each feature"
 
         # Create a normalization function
-        transform = lambda x: (x - torch.Tensor(data_norm.mean_each_feature)) / torch.Tensor(data_norm.std_each_feature)
+        transform = lambda x: (x - torch.Tensor(data_norm_exist.mean_each_feature)) / torch.Tensor(data_norm_exist.std_each_feature)
 
         # Apply the normalization function
         dataset.transform = transform
@@ -162,4 +162,4 @@ def load_csv_dataset(
     loader_train = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     loader_val = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)
 
-    return loader_train, loader_val, data_norm
+    return loader_train, loader_val, data_norm_exist

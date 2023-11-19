@@ -5,6 +5,28 @@ Reimplementation of TSMixer in PyTorch.
 * Original paper: [https://arxiv.org/pdf/2303.06053.pdf](https://arxiv.org/abs/2303.06053)
 * Similar implementations: [https://github.com/marcopeix/time-series-analysis/blob/master/TSMixer.ipynb](https://github.com/marcopeix/time-series-analysis/blob/master/TSMixer.ipynb)
 
+## Sample results
+
+![Predictions on validation set](readme_figures/preds.png)
+*Predictions on validation set*
+
+![Training loss](readme_figures/loss.png)
+*Loss during training*
+
+Parameters used for example:
+* `input_length`: 512
+* `prediction_length`: 96
+* `no_features`: 7
+* `no_mixer_layers`: 4
+* `dataset`: ETTh1.csv
+* `batch_size`: 32
+* `num_epochs`: 100 with early stopping after 5 epochs without improvement
+* `learning_rate`: 0.00001
+* `optimizer`: Adam
+* `validation_split_holdout`: 0.2 - last 20% of the time series data is used for validation
+* `dropout`: 0.3
+* `feat_mixing_hidden_channels`: 256 - number of hidden channels in the feature mixing layer
+
 ## Data
 
 You can find the raw ETDataset data [here](https://github.com/zhouhaoyi/ETDataset/tree/11ab373cf9c9f5be7698e219a5a170e1b1c8a930), specifically:
