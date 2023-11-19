@@ -5,6 +5,15 @@ Reimplementation of TSMixer in PyTorch.
 * Original paper: [https://arxiv.org/pdf/2303.06053.pdf](https://arxiv.org/abs/2303.06053)
 * Similar implementations: [https://github.com/marcopeix/time-series-analysis/blob/master/TSMixer.ipynb](https://github.com/marcopeix/time-series-analysis/blob/master/TSMixer.ipynb)
 
+## Data
+
+You can find the raw ETDataset data [here](https://github.com/zhouhaoyi/ETDataset/tree/11ab373cf9c9f5be7698e219a5a170e1b1c8a930), specifically:
+
+* [ETTh1.csv](https://github.com/zhouhaoyi/ETDataset/raw/11ab373cf9c9f5be7698e219a5a170e1b1c8a930/ETT-small/ETTh1.csv)
+* [ETTh2.csv](https://github.com/zhouhaoyi/ETDataset/raw/11ab373cf9c9f5be7698e219a5a170e1b1c8a930/ETT-small/ETTh2.csv)
+* [ETTm1.csv](https://github.com/zhouhaoyi/ETDataset/raw/11ab373cf9c9f5be7698e219a5a170e1b1c8a930/ETT-small/ETTm1.csv)
+* [ETTm2.csv](https://github.com/zhouhaoyi/ETDataset/raw/11ab373cf9c9f5be7698e219a5a170e1b1c8a930/ETT-small/ETTm2.csv)
+
 ## Implementation notes from the paper
 
 ### Training parameters
