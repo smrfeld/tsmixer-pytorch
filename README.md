@@ -40,3 +40,28 @@ yi_kt = (yhati_kt - beta_k) * sqrt(Var[xi_kt] + epsilon) / gamma_k + Mean[xi_kt]
 ```
 
 where `yhati_kt` is the output of the model for variable `k` at time `t` for sample `i`, and `yi_kt` is sent to the loss function.
+
+### Details on multivariate time series forecasting
+
+Input = matrix X of size (L,C) where L = num time steps, C = num features
+
+> B.3.2 Basic TSMixer for Multivariate Time Series Forecasting
+> For long-term time series forecasting (LTSF) tasks, TSMixer only uses the historical target time series X as input. A series of mixer blocks are applied to project the input data to a latent representation of size C. The final output is then projected to the prediction length T:
+```
+O_1 = Mix[C->C] (X)
+O_k = Mix[C->C] (O_{k-1}), for k = 2,...,K
+Y = TP[L->T] (O_K)
+```
+> where Ok is the latent representation of the k-th mixer block and Yˆ is the prediction. We project the sequence to length T after the mixer blocks as T may be quite long in LTSF tasks.
+
+i.e. keep the number of features the same as C, and use the same input time length L in the mixture blocks, then project to longer length L for the output.
+
+### Hidden layers of feature mixing
+
+> To increase the model capacity, we modify the hidden layers in Feature Mixing by using W2 ∈ (H×C),W3 ∈ (C×H),b2 ∈ H,b3 ∈ C in Eq. equation B.3.1, where H is a hyper-parameter indicating the hidden size.
+
+i.e. in th feature mixing block, where there are two fully connected layers, the first projects the number of channels from C->H and the second from H->C.
+
+> Another modification is using pre-normalization (Xiong et al., 2020) instead of post-normalization in residual blocks to keep the input scale.
+
+i.e. apply normalization to the input of the feature mixing block, instead of the output.

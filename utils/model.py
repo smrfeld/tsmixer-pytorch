@@ -4,10 +4,10 @@ import torch
 
 class TSMLPtime(nn.Module):
 
-    def __init__(self, width: int):
+    def __init__(self, width: int, dropout: float):
         super(TSMLPtime, self).__init__()
         self.lin = nn.Linear(in_features=width, out_features=width)
-        self.dropout = nn.Dropout(p=0.5)
+        self.dropout = nn.Dropout(p=dropout)
         self.act = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -19,12 +19,12 @@ class TSMLPtime(nn.Module):
 
 class TSMLPfeat(nn.Module):
 
-    def __init__(self, width: int):
+    def __init__(self, width: int, dropout: float):
         super(TSMLPfeat, self).__init__()
         self.lin_1 = nn.Linear(in_features=width, out_features=width)
         self.lin_2 = nn.Linear(in_features=width, out_features=width)
-        self.dropout_1 = nn.Dropout(p=0.5)
-        self.dropout_2 = nn.Dropout(p=0.5)
+        self.dropout_1 = nn.Dropout(p=dropout)
+        self.dropout_2 = nn.Dropout(p=dropout)
         self.act = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -58,9 +58,9 @@ class TSBatchNorm2d(nn.Module):
 
 class TSTimeMixingResBlock(nn.Module):
 
-    def __init__(self, width_time: int):
+    def __init__(self, width_time: int, dropout: float):
         super(TSTimeMixingResBlock, self).__init__()
-        self.mlp = TSMLPtime(width=width_time)
+        self.mlp = TSMLPtime(width=width_time, dropout=dropout)
         self.norm = TSBatchNorm2d()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -82,9 +82,9 @@ class TSTimeMixingResBlock(nn.Module):
 
 class TSFeatMixingResBlock(nn.Module):
 
-    def __init__(self, width_feats: int):
+    def __init__(self, width_feats: int, dropout: float):
         super(TSFeatMixingResBlock, self).__init__()
-        self.mlp = TSMLPfeat(width=width_feats)
+        self.mlp = TSMLPfeat(width=width_feats, dropout=dropout)
         self.norm = TSBatchNorm2d()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -100,10 +100,10 @@ class TSFeatMixingResBlock(nn.Module):
 
 class TSMixingLayer(nn.Module):
 
-    def __init__(self, input_length: int, no_feats: int):
+    def __init__(self, input_length: int, no_feats: int, dropout: float):
         super(TSMixingLayer, self).__init__()
-        self.time_mixing = TSTimeMixingResBlock(width_time=input_length)
-        self.feat_mixing = TSFeatMixingResBlock(width_feats=no_feats)
+        self.time_mixing = TSTimeMixingResBlock(width_time=input_length, dropout=dropout)
+        self.feat_mixing = TSFeatMixingResBlock(width_feats=no_feats, dropout=dropout)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input x: (batch_size, time, features)
@@ -133,12 +133,12 @@ class TSTemporalProjection(nn.Module):
 
 class TSMixerModelExclRIN(nn.Module):
 
-    def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int):
+    def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int, dropout: float):
         super(TSMixerModelExclRIN, self).__init__()
         self.temp_proj = TSTemporalProjection(input_length=input_length, forecast_length=forecast_length)
         self.mixer_layers = []
         for _ in range(no_mixer_layers):
-            self.mixer_layers.append(TSMixingLayer(input_length=input_length, no_feats=no_feats))
+            self.mixer_layers.append(TSMixingLayer(input_length=input_length, no_feats=no_feats, dropout=dropout))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input x: (batch_size, time, features)
@@ -155,7 +155,7 @@ class TSMixerModel(nn.Module):
     """Include Reversible instance normalization https://openreview.net/pdf?id=cGDAkQo1C0p
     """    
 
-    def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int, eps: float = 1e-8):
+    def __init__(self, input_length: int, forecast_length: int, no_feats: int, no_mixer_layers: int,  dropout: float, eps: float = 1e-8):
         super(TSMixerModel, self).__init__()
         self.eps = eps
 
@@ -168,7 +168,8 @@ class TSMixerModel(nn.Module):
             input_length=input_length, 
             forecast_length=forecast_length, 
             no_feats=no_feats, 
-            no_mixer_layers=no_mixer_layers
+            no_mixer_layers=no_mixer_layers,
+            dropout=dropout
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

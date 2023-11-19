@@ -90,6 +90,9 @@ class TSMixer:
         initialize: Initialize = Initialize.FROM_SCRATCH
         "How to initialize the model"
 
+        dropout: float = 0.5
+        "Dropout"
+
         @property
         def checkpoint_init(self):
             os.makedirs(self.output_dir, exist_ok=True)
@@ -159,7 +162,8 @@ class TSMixer:
             input_length=self.conf.input_length,
             forecast_length=self.conf.prediction_length,
             no_feats=self.conf.no_features,
-            no_mixer_layers=self.conf.no_mixer_layers
+            no_mixer_layers=self.conf.no_mixer_layers,
+            dropout=self.conf.dropout
             )
 
         # Load the model

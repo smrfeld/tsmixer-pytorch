@@ -19,14 +19,14 @@ class TestModel:
 
 
     def test_tsmlpfeat(self):
-        mlp = TSMLPfeat(width=5)
+        mlp = TSMLPfeat(width=5, dropout=0.5)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = mlp(data)
         assert data_out.shape == data.shape
 
     
     def test_tsmlptime(self):
-        mlp = TSMLPtime(width=100)
+        mlp = TSMLPtime(width=100, dropout=0.5)
         data = self._time_series(batch_size=32, input_length=5, no_feats=100) # Note: time and features are swapped
         data_out = mlp(data)
         assert data_out.shape == data.shape
@@ -40,21 +40,21 @@ class TestModel:
 
 
     def test_tsmixinglayer(self):
-        ml = TSMixingLayer(input_length=100, no_feats=5)
+        ml = TSMixingLayer(input_length=100, no_feats=5, dropout=0.5)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = ml(data)
         assert data_out.shape == data.shape
 
 
     def test_tsfeatmixingresblock(self):
-        fmrb = TSFeatMixingResBlock(width_feats=5)
+        fmrb = TSFeatMixingResBlock(width_feats=5, dropout=0.5)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = fmrb(data)
         assert data_out.shape == data.shape
 
 
     def test_tstimemixingresblock(self):
-        tmrb = TSTimeMixingResBlock(width_time=100)
+        tmrb = TSTimeMixingResBlock(width_time=100, dropout=0.5)
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         data_out = tmrb(data)
         assert data_out.shape == data.shape
@@ -66,7 +66,8 @@ class TestModel:
             input_length=100,
             forecast_length=10,
             no_feats=5,
-            no_mixer_layers=3
+            no_mixer_layers=3,
+            dropout=0.5
             )
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         forecast = ts(data)
@@ -80,7 +81,8 @@ class TestModel:
             input_length=100,
             forecast_length=10,
             no_feats=5,
-            no_mixer_layers=3
+            no_mixer_layers=3,
+            dropout=0.5
             )
         data = self._time_series(batch_size=32, input_length=100, no_feats=5)
         forecast = ts(data)
