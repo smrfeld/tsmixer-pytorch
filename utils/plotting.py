@@ -1,4 +1,4 @@
-from .tsmixer import TSMixer
+from .tsmixer_conf import TrainingMetadata
 
 from typing import List, Tuple, Optional
 from loguru import logger
@@ -62,7 +62,7 @@ def plot_preds(preds: List[List[float]], preds_gt: List[List[float]], no_feats_p
     return fig
 
 
-def plot_loss(train_data: TSMixer.TrainingMetadata, fname_save: Optional[str] = None, show: bool = True):
+def plot_loss(train_data: TrainingMetadata, fname_save: Optional[str] = None, show: bool = True):
     """Plot loss
 
     Args:
