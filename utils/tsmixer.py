@@ -10,6 +10,8 @@ from tqdm import tqdm
 import json
 import time
 import shutil
+from dataclasses import dataclass
+from mashumaro import DataClassDictMixin
 
 
 class TSMixer:
@@ -100,7 +102,23 @@ class TSMixer:
             return None
 
 
-    def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List:
+    @dataclass
+    class PredData(DataClassDictMixin):
+        pred_gt: List[List[float]]
+        pred: List[List[float]]
+        inputs: Optional[List[List[float]]] = None
+
+
+    def predict_val_dataset(self, max_samples: Optional[int] = None, save_inputs: bool = False) -> List[PredData]:
+        """Predict on the validation dataset
+
+        Args:
+            max_samples (Optional[int], optional): Maximum number of samples to predict from the validation dataset. Defaults to None.
+            save_inputs (bool, optional): Save the inputs as well as the predictions. Defaults to False.
+
+        Returns:
+            List[PredData]: List of predictions
+        """        
 
         # Change batch size to 1 and not shuffle data for consistency
         batch_size_save = self.conf.batch_size
@@ -115,27 +133,27 @@ class TSMixer:
         _, loader_val, _ = self.conf.create_data_loaders_train_val(data_norm)
         
         # Predict
-        data_json = []
+        data_list: List[TSMixer.PredData] = []
         for _ in tqdm(range(max_samples or len(loader_val)), desc="Predicting"):
             batch_input, batch_pred = next(iter(loader_val))
             batch_pred_hat = self.predict(batch_input)
-            data_json.append({
-                "pred_gt": batch_pred.tolist()[0],
-                "pred": batch_pred_hat.tolist()[0]
-                })
-            if save_inputs:
-                data_json[-1]["input"] = batch_input.tolist()[0]
+            data = TSMixer.PredData(
+                pred_gt=batch_pred.tolist()[0],
+                pred=batch_pred_hat.tolist()[0],
+                inputs=batch_input.tolist()[0] if save_inputs else None
+                )
+            data_list.append(data)            
 
         # Save data to json
         with open(self.conf.pred_val_dataset_json, "w") as f:
-            json.dump(data_json, f)
+            json.dump([ d.to_dict() for d in data_list ], f)
             logger.info(f"Saved data to {f.name}")
 
         # Reset options
         self.conf.batch_size = batch_size_save
         self.conf.shuffle = shuffle_save
 
-        return data_json
+        return data_list
 
 
     def train(self):

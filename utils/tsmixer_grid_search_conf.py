@@ -9,6 +9,8 @@ import os
 
 @dataclass
 class TSMixerGridSearch(DataClassDictMixin):
+    """Configuration for grid search
+    """    
 
     @dataclass
     class ParamRange(DataClassDictMixin):
@@ -74,6 +76,11 @@ class TSMixerGridSearch(DataClassDictMixin):
     "Path to the CSV file to load the dataset from. Only used if data_src is CSV_FILE"
 
     def iterate(self) -> Iterator[TSMixerConf]:
+        """Iterate over all configurations
+
+        Yields:
+            Iterator[TSMixerConf]: Configuration for a single run
+        """        
         for idx,param_range in enumerate(self.param_ranges):
             logger.info("===========================================")
             logger.info(f"Grid search iteration {idx+1}/{len(self.param_ranges)}")

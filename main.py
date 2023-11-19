@@ -42,8 +42,8 @@ if __name__ == "__main__":
         data_plt = data[0]
         assert args.no_feats_plot is not None, "Must provide number of features to plot"
         plot_preds(
-            preds=data_plt["pred"], 
-            preds_gt=data_plt["pred_gt"], 
+            preds=data_plt.pred, 
+            preds_gt=data_plt.pred_gt, 
             no_feats_plot=args.no_feats_plot, 
             show=args.show, 
             fname_save=os.path.join(conf.image_dir, "preds.png")

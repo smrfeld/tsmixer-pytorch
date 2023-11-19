@@ -15,8 +15,18 @@ class ValidationSplit(Enum):
 
 
 class DataframeDataset(Dataset):
+    """Dataset from a pandas dataframe
+    """    
 
     def __init__(self, df: pd.DataFrame, window_size_input: int, window_size_predict: int, transform: Optional[Callable] = None):
+        """Constructor
+
+        Args:
+            df (pd.DataFrame): Dataframe
+            window_size_input (int): Input window size
+            window_size_predict (int): Prediction window size
+            transform (Optional[Callable], optional): Transforms such as normalization applied to time series. Defaults to None.
+        """        
         window_size_total = window_size_input + window_size_predict
         assert len(df) > window_size_total, f"Dataset length ({len(df)}) must be greater than window size ({window_size_total})"
         self.df = df
@@ -27,7 +37,16 @@ class DataframeDataset(Dataset):
     def __len__(self):
         return len(self.df) - self.window_size_input - self.window_size_predict
 
-    def get_sample(self, idx):
+    def get_sample(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get a window sample. Input from [idx, idx + window_size_input], prediction from [idx + window_size_input, idx + window_size_input + window_size_predict
+
+        Args:
+            idx (int): Index
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Input and prediction tensors
+        """
+
         # Check if the index plus window size exceeds the length of the dataset
         if idx + self.window_size_input + self.window_size_predict > len(self.df):
             raise IndexError(f"Index ({idx}) + window_size_input ({self.window_size_input}) + window_size_predict ({self.window_size_predict}) exceeds dataset length ({len(self.df)})")
@@ -63,7 +82,10 @@ class DataframeDataset(Dataset):
 @dataclass
 class DataNormalization(DataClassDictMixin):
     mean_each_feature: Optional[List[float]] = None
+    "Mean for each feature"
+
     std_each_feature: Optional[List[float]] = None
+    "Std for each feature"
 
 
 def load_csv_dataset(
