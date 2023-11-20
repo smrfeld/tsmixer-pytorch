@@ -30,7 +30,7 @@ batch_size: 32
 num_epochs: 100
 
 # Optional: Learning rate
-learning_rate: 0.00001
+learning_rate: 0.000001
 
 # Optional: Optimizer - Adam, SGD, RMSprop, etc
 optimizer: Adam
