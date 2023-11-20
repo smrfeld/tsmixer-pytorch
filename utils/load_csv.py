@@ -117,11 +117,8 @@ def load_csv_dataset(
     """    
 
     # Load the CSV file into a DataFrame
-    df = pd.read_csv(csv_file, parse_dates=['date'])        
-
-    # Remove the date column, if present
-    if 'date' in df.columns:
-        df = df.drop(columns=['date'])
+    df_raw = pd.read_csv(csv_file)
+    df = df_raw.set_index('date')
 
     # Make dataset
     dataset = DataframeDataset(df, window_size_input=input_length, window_size_predict=prediction_length)
@@ -129,8 +126,7 @@ def load_csv_dataset(
 
     # Split the data into training and validation
     if val_split == ValidationSplit.TEMPORAL_HOLDOUT:
-        idxs_train = list(range(int(no_pts * (1-val_split_holdout))))
-        idxs_val = list(range(int(no_pts * (1-val_split_holdout)), no_pts))
+        idx_train_val = int(no_pts * (1-val_split_holdout))
     else:
         raise NotImplementedError(f"Validation split {val_split} not implemented")
 
@@ -139,7 +135,7 @@ def load_csv_dataset(
         data_norm_exist = DataNormalization()
 
         # Compute mean and std on training data from pandas dataframe
-        filtered_df = df.loc[idxs_train]
+        filtered_df = df[:idx_train_val]
         data_norm_exist.mean_each_feature = list(filtered_df.mean().values)
         data_norm_exist.std_each_feature = list(filtered_df.std().values)
         logger.debug(f"Computed data mean for each feature: {data_norm_exist.mean_each_feature}")
@@ -156,8 +152,8 @@ def load_csv_dataset(
         dataset.transform = transform
 
     # Splits
-    train_dataset = Subset(dataset, idxs_train)
-    val_dataset = Subset(dataset, idxs_val)
+    train_dataset = Subset(dataset, range(idx_train_val))
+    val_dataset = Subset(dataset, range(idx_train_val, no_pts))
 
     loader_train = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     loader_val = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)

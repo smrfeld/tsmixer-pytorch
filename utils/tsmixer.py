@@ -284,8 +284,13 @@ class TSMixer:
         # Forward pass
         batch_pred_hat = self.model(batch_input)
 
-        # Compute loss
-        loss = torch.nn.functional.mse_loss(batch_pred_hat, batch_pred, reduction='mean')
+        # Compute MSE loss
+        loss = torch.nn.functional.mse_loss(batch_pred_hat, batch_pred)
+
+        # Normalize the loss by the batch size
+        # batch_size = batch_input.size(0)
+        # loss /= batch_size
+
         return loss
 
 
