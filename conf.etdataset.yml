@@ -12,7 +12,7 @@ prediction_length: 96
 no_features: 7
 
 # REQUIRED: Number of mixer layers
-no_mixer_layers: 8
+no_mixer_layers: 2
 
 # REQUIRED: Data source
 data_src: csv-file
@@ -30,7 +30,7 @@ batch_size: 32
 num_epochs: 100
 
 # Optional: Learning rate
-learning_rate: 0.000001
+learning_rate: 0.00001
 
 # Optional: Optimizer - Adam, SGD, RMSprop, etc
 optimizer: Adam
@@ -46,7 +46,7 @@ validation_split: temporal-holdout
 validation_split_holdout: 0.2
 
 # Optional: dropout
-dropout: 0.7
+dropout: 0.3
 
 # Optional: Number of hidden channels in the feature mixing layer
-feat_mixing_hidden_channels: 64
+feat_mixing_hidden_channels: null
