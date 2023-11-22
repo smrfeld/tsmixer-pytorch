@@ -305,6 +305,8 @@ class TSMixer:
         Returns:
             float: Loss (MSE)
         """        
+        optimizer.zero_grad()
+
         self.model.train()
 
         # Loss
