@@ -119,9 +119,10 @@ class TSMixerModelExclRIN(nn.Module):
     def __init__(self, input_length: int, forecast_length: int, no_feats: int, feat_mixing_hidden_channels: int, no_mixer_layers: int, dropout: float):
         super(TSMixerModelExclRIN, self).__init__()
         self.temp_proj = TSTemporalProjection(input_length=input_length, forecast_length=forecast_length)
-        self.mixer_layers = []
+        mixer_layers = []
         for _ in range(no_mixer_layers):
-            self.mixer_layers.append(TSMixingLayer(input_length=input_length, no_feats=no_feats, feat_mixing_hidden_channels=feat_mixing_hidden_channels, dropout=dropout))
+            mixer_layers.append(TSMixingLayer(input_length=input_length, no_feats=no_feats, feat_mixing_hidden_channels=feat_mixing_hidden_channels, dropout=dropout))
+        self.mixer_layers = nn.ModuleList(mixer_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Input x: (batch_size, time, features)

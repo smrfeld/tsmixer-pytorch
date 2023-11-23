@@ -56,6 +56,9 @@ class TSMixerConf(DataClassDictMixin):
     data_src: DataSrc
     "Where to load the dataset from"
 
+    device: str = "mps"
+    "Device to use for training"
+
     data_src_csv: Optional[str] = None
     "Path to the CSV file to load the dataset from. Only used if data_src is CSV_FILE"
 
@@ -133,6 +136,16 @@ class TSMixerConf(DataClassDictMixin):
 
     def check_valid(self):
         assert 0 <= self.validation_split_holdout <= 1, "validation_split_holdout must be between 0 and 1"
+
+        # Check device exists
+        import torch
+        assert self.device in ["cpu", "cuda", "cuda:0", "cuda:1", "cuda:2", "cuda:3", "mps"], f"Device {self.device} not supported"
+        if self.device == "cuda":
+            assert torch.cuda.is_available(), "CUDA is not available"
+            assert torch.cuda.device_count() > 1, "Must have more than one CUDA device to use MPS"
+        elif self.device == "mps":
+            assert torch.backends.mps.is_available(), "MPS is not available"
+    
 
     def load_training_metadata_or_new(self, epoch_start: Optional[int] = None) -> "TrainingMetadata":
         """Load the training progress from a JSON file, or create a new one

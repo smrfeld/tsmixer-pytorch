@@ -39,6 +39,9 @@ class TSMixer:
             dropout=self.conf.dropout
             )
 
+        # Move to device
+        self.model.to(self.conf.device)
+
         # Load the model
         if self.conf.initialize == self.conf.Initialize.FROM_LATEST_CHECKPOINT:
             self.load_checkpoint(fname=self.conf.checkpoint_latest)
@@ -88,6 +91,8 @@ class TSMixer:
         assert batch_input.shape[1] == self.conf.input_length, f"Input length {batch_input.shape[1]} does not match configuration {self.conf.input_length}"
         assert batch_input.shape[2] == self.conf.no_features, f"Number of features {batch_input.shape[2]} does not match configuration {self.conf.no_features}"
 
+        # Predict
+        batch_input = batch_input.to(self.conf.device)
         with torch.no_grad():
             batch_pred_hat = self.model(batch_input)
         return batch_pred_hat
@@ -228,6 +233,7 @@ class TSMixer:
             # Training
             train_loss = 0
             for batch_input, batch_pred in tqdm(loader_train, desc="Training batches"):
+                batch_input, batch_pred = batch_input.to(self.conf.device), batch_pred.to(self.conf.device)
                 train_loss += self._train_step(batch_input, batch_pred, optimizer)
 
             # Validation loss
@@ -235,6 +241,7 @@ class TSMixer:
             with torch.no_grad():
                 val_loss = 0
                 for batch_input, batch_pred in tqdm(loader_val, desc="Validation batches"):
+                    batch_input, batch_pred = batch_input.to(self.conf.device), batch_pred.to(self.conf.device)
                     val_loss += self._compute_loss(batch_input, batch_pred).item()
 
             # Log
@@ -307,6 +314,7 @@ class TSMixer:
         """        
         optimizer.zero_grad()
 
+        # Train mode
         self.model.train()
 
         # Loss
